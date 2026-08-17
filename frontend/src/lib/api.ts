@@ -73,7 +73,25 @@ async function requestForm<T>(path: string, formData: FormData, retried = false)
   return response.json() as Promise<T>;
 }
 
-export async function refreshAccessToken(): Promise<boolean> {
+// The refresh token is single-use (rotated on every call, same as
+// lib/auth.ts's bootstrapSession() dedup) — two concurrent 401s (e.g. two
+// polling requests expiring around the same tick) must share one refresh
+// call, or the loser's request carries an already-rotated-away token,
+// fails, and wrongly clears a session the winner just successfully
+// refreshed. request()/requestForm() both call this directly, so the
+// guard lives here rather than being duplicated at each call site.
+let inFlightRefresh: Promise<boolean> | null = null;
+
+export function refreshAccessToken(): Promise<boolean> {
+  if (!inFlightRefresh) {
+    inFlightRefresh = doRefresh().finally(() => {
+      inFlightRefresh = null;
+    });
+  }
+  return inFlightRefresh;
+}
+
+async function doRefresh(): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
       method: 'POST',
