@@ -7,6 +7,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { AuditLogsService } from "@/modules/audit-logs/audit-logs.service";
 import { SlaService } from "@/modules/sla/sla.service";
+import { ConversationsService } from "@/modules/conversations/conversations.service";
+import { CustomersService } from "@/modules/customers/customers.service";
+import { DepartmentsService } from "@/modules/departments/departments.service";
+import { UsersService } from "@/modules/users/users.service";
 import { Ticket, TicketStatus } from "./entities/ticket.entity";
 import { TicketComment } from "./entities/ticket-comment.entity";
 import { CreateTicketDto } from "./dto/create-ticket.dto";
@@ -32,6 +36,10 @@ export class TicketsService {
     private readonly commentRepo: Repository<TicketComment>,
     private readonly slaService: SlaService,
     private readonly auditLogsService: AuditLogsService,
+    private readonly conversationsService: ConversationsService,
+    private readonly customersService: CustomersService,
+    private readonly departmentsService: DepartmentsService,
+    private readonly usersService: UsersService,
   ) {}
 
   findAll(tenantId: string): Promise<Ticket[]> {
@@ -56,6 +64,21 @@ export class TicketsService {
     userId: string | null,
     dto: CreateTicketDto,
   ): Promise<Ticket> {
+    // Every foreign id here comes straight from client input — verify each
+    // one actually belongs to this tenant before writing it onto the
+    // ticket, otherwise the row ends up with a dangling reference into
+    // another tenant's data.
+    await this.customersService.findOne(tenantId, dto.customerId);
+    if (dto.conversationId) {
+      await this.conversationsService.findOne(tenantId, dto.conversationId);
+    }
+    if (dto.departmentId) {
+      await this.departmentsService.findOne(tenantId, dto.departmentId);
+    }
+    if (dto.agentId) {
+      await this.usersService.findOne(tenantId, dto.agentId);
+    }
+
     const policy = await this.slaService.findMatchingPolicy(
       tenantId,
       dto.departmentId ?? null,

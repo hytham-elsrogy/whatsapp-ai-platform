@@ -22,8 +22,30 @@ export class WhatsappNumbersService {
     return this.repo.find({ where: { tenantId } });
   }
 
+  /**
+   * Unscoped by design — safe only when `id` is derived from an
+   * already-tenant-verified object (e.g. `conversation.whatsappNumberId`
+   * after `conversationsService.findOne(tenantId, ...)`), never from raw
+   * client input. If `id` comes straight from a request body/param, use
+   * `findOne(tenantId, id)` instead — see its doc comment for why this
+   * distinction matters.
+   */
   async findById(id: string): Promise<WhatsappNumber> {
     const number = await this.repo.findOne({ where: { id } });
+    if (!number) throw new NotFoundException("WhatsApp number not found");
+    return number;
+  }
+
+  /**
+   * Tenant-scoped lookup — use this whenever `id` originates from
+   * unvalidated client input (a request body field, not a value derived
+   * from an already-tenant-verified resource). `findById()` above has no
+   * such guarantee and previously being used with a raw client-supplied
+   * `whatsappNumberId` (in TemplatesService.submitToMeta) let one tenant
+   * resolve and use another tenant's live Meta access token.
+   */
+  async findOne(tenantId: string, id: string): Promise<WhatsappNumber> {
+    const number = await this.repo.findOne({ where: { id, tenantId } });
     if (!number) throw new NotFoundException("WhatsApp number not found");
     return number;
   }

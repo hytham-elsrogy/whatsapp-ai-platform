@@ -5,6 +5,7 @@ import { RoutingModule } from "@/modules/routing/routing.module";
 import { AuditLogsModule } from "@/modules/audit-logs/audit-logs.module";
 import { NotificationsModule } from "@/modules/notifications/notifications.module";
 import { RealtimeModule } from "@/modules/realtime/realtime.module";
+import { UsersModule } from "@/modules/users/users.module";
 import { AssignmentService } from "./assignment.service";
 import { AssignmentController } from "./assignment.controller";
 
@@ -16,6 +17,7 @@ import { AssignmentController } from "./assignment.controller";
     AuditLogsModule,
     NotificationsModule,
     RealtimeModule,
+    UsersModule,
   ],
   providers: [AssignmentService],
   controllers: [AssignmentController],

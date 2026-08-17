@@ -39,6 +39,15 @@ export class UsersService {
     return user;
   }
 
+  /** Tenant-scoped — use when `id` originates from unvalidated client input (see findById's equivalent doc comment on WhatsappNumbersService for why this distinction matters). */
+  async findOne(tenantId: string, id: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id, tenantId },
+    });
+    if (!user) throw new NotFoundException("User not found");
+    return user;
+  }
+
   async create(input: CreateUserInput): Promise<User> {
     const existing = await this.userRepository.findOne({
       where: { email: input.email.toLowerCase(), tenantId: input.tenantId },

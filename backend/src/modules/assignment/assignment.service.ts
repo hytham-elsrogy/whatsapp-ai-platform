@@ -5,6 +5,7 @@ import { RoutingService } from "@/modules/routing/routing.service";
 import { AuditLogsService } from "@/modules/audit-logs/audit-logs.service";
 import { NotificationsService } from "@/modules/notifications/notifications.service";
 import { EventsGateway } from "@/modules/realtime/events.gateway";
+import { UsersService } from "@/modules/users/users.service";
 import { Conversation } from "@/modules/conversations/entities/conversation.entity";
 
 @Injectable()
@@ -18,6 +19,7 @@ export class AssignmentService {
     private readonly auditLogsService: AuditLogsService,
     private readonly notificationsService: NotificationsService,
     private readonly eventsGateway: EventsGateway,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -73,6 +75,13 @@ export class AssignmentService {
       tenantId,
       conversationId,
     );
+    // Always verify the agent belongs to this tenant, regardless of
+    // department state — the department-membership check below only ever
+    // ran when the conversation already had a department, silently
+    // skipping tenant validation entirely for departmentless conversations
+    // (a real gap: any conversation without a department yet could be
+    // assigned to any user id, including one from a different tenant).
+    await this.usersService.findOne(tenantId, agentId);
 
     if (conversation.departmentId) {
       const agents = await this.departmentsService.getDepartmentAgents(
@@ -133,6 +142,11 @@ export class AssignmentService {
       tenantId,
       conversationId,
     );
+    // toDepartmentId comes straight from client input — must be verified
+    // to belong to this tenant before it's written or handed to routing,
+    // otherwise a foreign tenant's department roster leaks into agent
+    // selection below.
+    await this.departmentsService.findOne(tenantId, toDepartmentId);
     await this.conversationsService.setDepartment(
       conversationId,
       toDepartmentId,

@@ -6,6 +6,8 @@ import { SlaModule } from "@/modules/sla/sla.module";
 import { DepartmentsModule } from "@/modules/departments/departments.module";
 import { ConversationsModule } from "@/modules/conversations/conversations.module";
 import { AuditLogsModule } from "@/modules/audit-logs/audit-logs.module";
+import { CustomersModule } from "@/modules/customers/customers.module";
+import { UsersModule } from "@/modules/users/users.module";
 import { Conversation } from "@/modules/conversations/entities/conversation.entity";
 import { Ticket } from "./entities/ticket.entity";
 import { TicketComment } from "./entities/ticket-comment.entity";
@@ -23,6 +25,8 @@ import { SLA_SWEEP_QUEUE, SLA_SWEEP_INTERVAL_MS } from "./sla-sweep.constants";
     DepartmentsModule,
     ConversationsModule,
     AuditLogsModule,
+    CustomersModule,
+    UsersModule,
   ],
   // Same worker/backend split as WhatsappModule (see its comment for the
   // NODE_ENV fallback) — sweeping is a background job, not an API-request

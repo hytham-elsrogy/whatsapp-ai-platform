@@ -110,8 +110,10 @@ export class TemplatesService {
     });
     if (!template) throw new NotFoundException("Template not found");
 
-    const whatsappNumber =
-      await this.whatsappNumbersService.findById(whatsappNumberId);
+    const whatsappNumber = await this.whatsappNumbersService.findOne(
+      tenantId,
+      whatsappNumberId,
+    );
     const accessToken =
       await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
     const variableCount = await this.variableRepo.count({
