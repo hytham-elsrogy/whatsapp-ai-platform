@@ -113,7 +113,7 @@ export class TemplatesService {
     const whatsappNumber =
       await this.whatsappNumbersService.findById(whatsappNumberId);
     const accessToken =
-      this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+      await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
     const variableCount = await this.variableRepo.count({
       where: { templateId: id },
     });
@@ -211,7 +211,7 @@ export class TemplatesService {
     }
 
     const accessToken =
-      this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+      await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
 
     let result;
     try {

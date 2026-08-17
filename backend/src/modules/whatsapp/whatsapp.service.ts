@@ -141,7 +141,7 @@ export class WhatsAppService {
     }
 
     const accessToken =
-      this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+      await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
 
     let result;
     try {
@@ -267,7 +267,9 @@ export class WhatsAppService {
               { id: string; caption?: string } | undefined;
             if (media?.id) {
               const accessToken =
-                this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+                await this.whatsappNumbersService.resolveAccessToken(
+                  whatsappNumber,
+                );
               await this.attachmentsService.downloadAndStore(
                 tenantId,
                 inboundMessage.id,
@@ -333,7 +335,9 @@ export class WhatsAppService {
 
           try {
             const accessToken =
-              this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+              await this.whatsappNumbersService.resolveAccessToken(
+                whatsappNumber,
+              );
             await this.metaService.markAsRead(
               phoneNumberId,
               accessToken,
@@ -408,7 +412,7 @@ export class WhatsAppService {
         : "تم إلغاء اشتراكك ولن تصلك رسائل أخرى. يمكنك إعادة التواصل معنا في أي وقت.";
     try {
       const accessToken =
-        this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+        await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
       const result = await this.metaService.sendTextMessage(
         whatsappNumber.phoneNumberId,
         accessToken,

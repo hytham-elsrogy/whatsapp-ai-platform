@@ -37,13 +37,21 @@ import { WhatsappInboundProcessor } from "@/queue/processors/whatsapp-inbound.pr
     UploadsModule,
   ],
   controllers: [WebhookController, WhatsappController],
-  // The inbound-processing worker only runs in the `worker` process
-  // (WORKER_MODE=true) — the `backend` API process enqueues jobs via the
-  // fast-ack webhook pattern but never consumes them itself, so a burst of
-  // inbound webhooks can't add latency to API request handling.
+  // In production, the inbound-processing worker only runs in the `worker`
+  // process (WORKER_MODE=true) — the `backend` API process enqueues jobs
+  // via the fast-ack webhook pattern but never consumes them itself, so a
+  // burst of inbound webhooks can't add latency to API request handling.
+  // Outside production (local dev, NODE_ENV!=='production'), it always
+  // registers — a single `npm run start:dev` should still process
+  // everything, matching how this app worked before the backend/worker
+  // split existed; requiring two terminals for basic local dev would be a
+  // real regression, not just an architectural nicety.
   providers: [
     WhatsAppService,
-    ...(process.env.WORKER_MODE === "true" ? [WhatsappInboundProcessor] : []),
+    ...(process.env.WORKER_MODE === "true" ||
+    process.env.NODE_ENV !== "production"
+      ? [WhatsappInboundProcessor]
+      : []),
   ],
   exports: [WhatsAppService],
 })

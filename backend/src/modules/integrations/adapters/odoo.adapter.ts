@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { SecretsProvider } from "@/modules/secrets/secrets-provider.interface";
+import { SECRETS_PROVIDER } from "@/modules/secrets/secrets.tokens";
 import { IntegrationConfig } from "../entities/integration.entity";
 import {
   AdapterCallResult,
   IntegrationAdapter,
   IntegrationCallError,
-  resolveSecret,
 } from "./integration-adapter.interface";
 
 /**
@@ -18,6 +19,10 @@ import {
  */
 @Injectable()
 export class OdooAdapter implements IntegrationAdapter {
+  constructor(
+    @Inject(SECRETS_PROVIDER) private readonly secretsProvider: SecretsProvider,
+  ) {}
+
   async execute(
     config: IntegrationConfig,
     action: string,
@@ -34,7 +39,8 @@ export class OdooAdapter implements IntegrationAdapter {
     const model = modelMethod.slice(0, lastDot);
     const method = modelMethod.slice(lastDot + 1);
 
-    const password = resolveSecret(config.secretRef);
+    const password =
+      (await this.secretsProvider.getSecret(config.secretRef)) ?? "";
     const uid = await this.authenticate(config, password);
 
     const response = await fetch(`${config.baseUrl}/jsonrpc`, {

@@ -460,7 +460,7 @@ export class AiService {
       conversation.whatsappNumberId,
     );
     const accessToken =
-      this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+      await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
     try {
       const result = await this.metaService.sendTextMessage(
         whatsappNumber.phoneNumberId,

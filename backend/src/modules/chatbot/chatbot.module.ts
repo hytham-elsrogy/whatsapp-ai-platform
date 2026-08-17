@@ -37,11 +37,15 @@ import { CHATBOT_DELAY_QUEUE } from "./chatbot-delay.constants";
     AiAgentsModule,
     TagsModule,
   ],
-  // Same worker/backend split as WhatsappModule.
+  // Same worker/backend split as WhatsappModule (see its comment for the
+  // NODE_ENV fallback).
   providers: [
     ChatbotFlowsService,
     ChatbotService,
-    ...(process.env.WORKER_MODE === "true" ? [ChatbotDelayProcessor] : []),
+    ...(process.env.WORKER_MODE === "true" ||
+    process.env.NODE_ENV !== "production"
+      ? [ChatbotDelayProcessor]
+      : []),
   ],
   controllers: [ChatbotFlowsController],
   exports: [ChatbotFlowsService, ChatbotService],

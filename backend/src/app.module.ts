@@ -36,6 +36,7 @@ import { TagsModule } from "./modules/tags/tags.module";
 import { ConsentsModule } from "./modules/consents/consents.module";
 import { ComplianceModule } from "./modules/compliance/compliance.module";
 import { UploadsModule } from "./modules/uploads/uploads.module";
+import { SecretsModule } from "./modules/secrets/secrets.module";
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { UploadsModule } from "./modules/uploads/uploads.module";
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 200 }]),
     QueueModule,
+    SecretsModule,
     TenantsModule,
     RolesPermissionsModule,
     UsersModule,

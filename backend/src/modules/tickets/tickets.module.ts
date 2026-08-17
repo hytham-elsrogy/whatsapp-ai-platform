@@ -24,12 +24,16 @@ import { SLA_SWEEP_QUEUE, SLA_SWEEP_INTERVAL_MS } from "./sla-sweep.constants";
     ConversationsModule,
     AuditLogsModule,
   ],
-  // Same worker/backend split as WhatsappModule — sweeping is a background
-  // job, not an API-request concern.
+  // Same worker/backend split as WhatsappModule (see its comment for the
+  // NODE_ENV fallback) — sweeping is a background job, not an API-request
+  // concern.
   providers: [
     TicketsService,
     SlaSweepService,
-    ...(process.env.WORKER_MODE === "true" ? [SlaSweepProcessor] : []),
+    ...(process.env.WORKER_MODE === "true" ||
+    process.env.NODE_ENV !== "production"
+      ? [SlaSweepProcessor]
+      : []),
   ],
   controllers: [TicketsController],
   exports: [TicketsService],

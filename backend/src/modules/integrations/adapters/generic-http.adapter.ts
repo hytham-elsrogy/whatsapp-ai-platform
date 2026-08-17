@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { SecretsProvider } from "@/modules/secrets/secrets-provider.interface";
+import { SECRETS_PROVIDER } from "@/modules/secrets/secrets.tokens";
 import { IntegrationConfig } from "../entities/integration.entity";
 import {
   AdapterCallResult,
   IntegrationAdapter,
   IntegrationCallError,
-  resolveSecret,
 } from "./integration-adapter.interface";
 
 /**
@@ -17,6 +18,10 @@ import {
  */
 @Injectable()
 export class GenericHttpAdapter implements IntegrationAdapter {
+  constructor(
+    @Inject(SECRETS_PROVIDER) private readonly secretsProvider: SecretsProvider,
+  ) {}
+
   async execute(
     config: IntegrationConfig,
     action: string,
@@ -30,7 +35,7 @@ export class GenericHttpAdapter implements IntegrationAdapter {
       );
     }
 
-    const token = resolveSecret(config.secretRef);
+    const token = await this.secretsProvider.getSecret(config.secretRef);
     const response = await fetch(`${config.baseUrl}${path}`, {
       method: "POST",
       headers: {

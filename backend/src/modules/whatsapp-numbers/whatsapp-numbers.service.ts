@@ -1,6 +1,8 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { SecretsProvider } from "@/modules/secrets/secrets-provider.interface";
+import { SECRETS_PROVIDER } from "@/modules/secrets/secrets.tokens";
 import { WhatsappNumber } from "./entities/whatsapp-number.entity";
 import { CreateWhatsappNumberDto } from "./dto/create-whatsapp-number.dto";
 import { UpdateWhatsappNumberDto } from "./dto/update-whatsapp-number.dto";
@@ -12,6 +14,8 @@ export class WhatsappNumbersService {
   constructor(
     @InjectRepository(WhatsappNumber)
     private readonly repo: Repository<WhatsappNumber>,
+    @Inject(SECRETS_PROVIDER)
+    private readonly secretsProvider: SecretsProvider,
   ) {}
 
   findAll(tenantId: string): Promise<WhatsappNumber[]> {
@@ -54,27 +58,22 @@ export class WhatsappNumbersService {
   }
 
   /**
-   * Resolves the raw Meta access token for a number by treating
-   * `accessTokenSecretRef` as an environment variable *name* to look up —
-   * the same convention already used by the Integrations module's
-   * `resolveSecret()`. A production deployment would swap this lookup for a
-   * real Secret Manager call keyed by the same ref, without touching any
-   * caller (see docs/architecture/04-security-architecture.md).
-   *
-   * Falls back to the single shared META_ACCESS_TOKEN when the ref doesn't
-   * resolve to anything, logging a warning — that fallback is a dev
-   * convenience, not something that should go unnoticed in a real deployment
-   * with more than one WhatsApp number.
+   * Resolves the raw Meta access token for a number via SECRETS_PROVIDER
+   * (currently env-var-backed; see modules/secrets). Falls back to the
+   * single shared META_ACCESS_TOKEN when the ref doesn't resolve to
+   * anything, logging a warning — that fallback is a dev convenience, not
+   * something that should go unnoticed in a real deployment with more than
+   * one WhatsApp number.
    */
-  resolveAccessToken(number: WhatsappNumber): string {
-    const scoped = number.accessTokenSecretRef
-      ? process.env[number.accessTokenSecretRef]
-      : undefined;
+  async resolveAccessToken(number: WhatsappNumber): Promise<string> {
+    const scoped = await this.secretsProvider.getSecret(
+      number.accessTokenSecretRef,
+    );
     if (scoped) return scoped;
 
     this.logger.warn(
       `WhatsApp number ${number.id} (${number.label}) has no resolvable secret at accessTokenSecretRef="${number.accessTokenSecretRef}" — falling back to the shared META_ACCESS_TOKEN`,
     );
-    return process.env.META_ACCESS_TOKEN || "";
+    return (await this.secretsProvider.getSecret("META_ACCESS_TOKEN")) ?? "";
   }
 }
