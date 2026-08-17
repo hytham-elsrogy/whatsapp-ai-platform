@@ -1,24 +1,31 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Tenant } from '@/modules/tenants/entities/tenant.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
+import { Tenant } from "@/modules/tenants/entities/tenant.entity";
 
-@Entity('knowledge_bases')
+@Entity("knowledge_bases")
 export class KnowledgeBase {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id" })
   tenant: Tenant;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: "tenant_id" })
   tenantId: string;
 
   @Column({ length: 150 })
   name: string;
 
-  @Column({ name: 'department_id', nullable: true })
+  @Column({ name: "department_id", nullable: true })
   departmentId?: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 }

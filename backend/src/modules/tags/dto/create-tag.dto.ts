@@ -1,5 +1,5 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
-import { TagScope } from '../entities/tag.entity';
+import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
+import { TagScope } from "../entities/tag.entity";
 
 export class CreateTagDto {
   @IsString()
@@ -12,6 +12,6 @@ export class CreateTagDto {
   color?: string;
 
   @IsOptional()
-  @IsIn(['conversation', 'customer'])
+  @IsIn(["conversation", "customer"])
   scope?: TagScope;
 }

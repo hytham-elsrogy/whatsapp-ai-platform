@@ -115,7 +115,7 @@ export function NodeConfigPanel({ nodeType, config, departments, onChange, onDel
               ))}
             </div>
             <p className="mt-1 text-[11px] text-gray-400">
-              اربط حواف بشرط "يساوي" بقيمة المعرّف لتفريع المسار حسب اختيار العميل.
+              اربط حواف بشرط &quot;يساوي&quot; بقيمة المعرّف لتفريع المسار حسب اختيار العميل.
             </p>
           </div>
         )}

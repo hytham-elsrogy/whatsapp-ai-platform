@@ -1,6 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { IntegrationConfig } from '../entities/integration.entity';
-import { AdapterCallResult, IntegrationAdapter, IntegrationCallError, resolveSecret } from './integration-adapter.interface';
+import { Injectable } from "@nestjs/common";
+import { IntegrationConfig } from "../entities/integration.entity";
+import {
+  AdapterCallResult,
+  IntegrationAdapter,
+  IntegrationCallError,
+  resolveSecret,
+} from "./integration-adapter.interface";
 
 /**
  * Real Odoo external API shape — JSON-RPC 2.0 over HTTP calling
@@ -13,12 +18,19 @@ import { AdapterCallResult, IntegrationAdapter, IntegrationCallError, resolveSec
  */
 @Injectable()
 export class OdooAdapter implements IntegrationAdapter {
-  async execute(config: IntegrationConfig, action: string, params: Record<string, unknown>): Promise<AdapterCallResult> {
+  async execute(
+    config: IntegrationConfig,
+    action: string,
+    params: Record<string, unknown>,
+  ): Promise<AdapterCallResult> {
     const modelMethod = config.endpoints?.[action];
     if (!modelMethod) {
-      throw new IntegrationCallError(400, `No model.method mapping configured for action "${action}"`);
+      throw new IntegrationCallError(
+        400,
+        `No model.method mapping configured for action "${action}"`,
+      );
     }
-    const lastDot = modelMethod.lastIndexOf('.');
+    const lastDot = modelMethod.lastIndexOf(".");
     const model = modelMethod.slice(0, lastDot);
     const method = modelMethod.slice(lastDot + 1);
 
@@ -26,15 +38,22 @@ export class OdooAdapter implements IntegrationAdapter {
     const uid = await this.authenticate(config, password);
 
     const response = await fetch(`${config.baseUrl}/jsonrpc`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'call',
+        jsonrpc: "2.0",
+        method: "call",
         params: {
-          service: 'object',
-          method: 'execute_kw',
-          args: [config.database, uid, password, model, method, [Object.values(params)]],
+          service: "object",
+          method: "execute_kw",
+          args: [
+            config.database,
+            uid,
+            password,
+            model,
+            method,
+            [Object.values(params)],
+          ],
         },
         id: Date.now(),
       }),
@@ -50,16 +69,19 @@ export class OdooAdapter implements IntegrationAdapter {
     return { statusCode: response.status, body: payload.result };
   }
 
-  private async authenticate(config: IntegrationConfig, password: string): Promise<number> {
+  private async authenticate(
+    config: IntegrationConfig,
+    password: string,
+  ): Promise<number> {
     const response = await fetch(`${config.baseUrl}/jsonrpc`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'call',
+        jsonrpc: "2.0",
+        method: "call",
         params: {
-          service: 'common',
-          method: 'authenticate',
+          service: "common",
+          method: "authenticate",
           args: [config.database, config.username, password, {}],
         },
         id: Date.now(),

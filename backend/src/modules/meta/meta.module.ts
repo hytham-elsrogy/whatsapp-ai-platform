@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { MetaService } from './meta.service';
+import { Module } from "@nestjs/common";
+import { MetaService } from "./meta.service";
 
 @Module({
   providers: [MetaService],

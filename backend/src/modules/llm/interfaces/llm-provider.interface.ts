@@ -1,10 +1,15 @@
 export type LLMContentBlock =
-  | { type: 'text'; text: string }
-  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
-  | { type: 'tool_result'; toolCallId: string; content: string };
+  | { type: "text"; text: string }
+  | {
+      type: "tool_use";
+      id: string;
+      name: string;
+      input: Record<string, unknown>;
+    }
+  | { type: "tool_result"; toolCallId: string; content: string };
 
 export interface LLMMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string | LLMContentBlock[];
 }
 

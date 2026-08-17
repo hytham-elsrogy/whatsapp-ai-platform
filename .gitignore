@@ -26,5 +26,8 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code runtime state (not project source)
+.claude/
+
 # Docker build context noise (backup scripts intentionally kept — this is
 # the project's own backup/ directory, not local backup output)

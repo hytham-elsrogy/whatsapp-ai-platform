@@ -1,8 +1,8 @@
-import { createHash } from 'crypto';
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
-import { ConsentsService } from '@/modules/consents/consents.service';
+import { createHash } from "crypto";
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import Redis from "ioredis";
+import { ConsentsService } from "@/modules/consents/consents.service";
 
 export class ComplianceCheckError extends Error {}
 
@@ -27,13 +27,15 @@ export class ComplianceService implements OnModuleDestroy {
     private readonly consentsService: ConsentsService,
   ) {
     this.redis = new Redis({
-      host: configService.get<string>('redis.host', 'localhost'),
-      port: configService.get<number>('redis.port', 6379),
-      password: configService.get<string>('redis.password', '') || undefined,
+      host: configService.get<string>("redis.host", "localhost"),
+      port: configService.get<number>("redis.port", 6379),
+      password: configService.get<string>("redis.password", "") || undefined,
       lazyConnect: false,
       maxRetriesPerRequest: 1,
     });
-    this.redis.on('error', (error) => this.logger.warn(`Redis connection issue: ${error.message}`));
+    this.redis.on("error", (error) =>
+      this.logger.warn(`Redis connection issue: ${error.message}`),
+    );
   }
 
   onModuleDestroy(): void {
@@ -42,11 +44,16 @@ export class ComplianceService implements OnModuleDestroy {
 
   async checkOptIn(customerId: string): Promise<void> {
     if (await this.consentsService.isOptedOut(customerId)) {
-      throw new ComplianceCheckError('Customer has opted out of communications — message not sent');
+      throw new ComplianceCheckError(
+        "Customer has opted out of communications — message not sent",
+      );
     }
   }
 
-  async checkRateLimit(phoneNumberId: string, limitPerMinute = DEFAULT_RATE_LIMIT_PER_MINUTE): Promise<void> {
+  async checkRateLimit(
+    phoneNumberId: string,
+    limitPerMinute = DEFAULT_RATE_LIMIT_PER_MINUTE,
+  ): Promise<void> {
     const bucket = Math.floor(Date.now() / 60_000);
     const key = `compliance:rate:${phoneNumberId}:${bucket}`;
     const count = await this.redis.incr(key);
@@ -63,9 +70,9 @@ export class ComplianceService implements OnModuleDestroy {
     text: string,
     windowSeconds = DUPLICATE_WINDOW_SECONDS,
   ): Promise<void> {
-    const hash = createHash('sha256').update(text).digest('hex').slice(0, 16);
+    const hash = createHash("sha256").update(text).digest("hex").slice(0, 16);
     const key = `compliance:dedupe:${conversationId}:${hash}`;
-    const set = await this.redis.set(key, '1', 'EX', windowSeconds, 'NX');
+    const set = await this.redis.set(key, "1", "EX", windowSeconds, "NX");
     if (set === null) {
       throw new ComplianceCheckError(
         `Duplicate message — the same text was already sent to this conversation in the last ${windowSeconds}s`,

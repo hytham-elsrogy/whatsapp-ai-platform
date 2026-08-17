@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { MetaApiError, MetaService } from '@/modules/meta/meta.service';
-import { StorageService } from './storage.service';
-import { Attachment } from './entities/attachment.entity';
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { MetaApiError, MetaService } from "@/modules/meta/meta.service";
+import { StorageService } from "./storage.service";
+import { Attachment } from "./entities/attachment.entity";
 
 @Injectable()
 export class AttachmentsService {
@@ -31,11 +31,21 @@ export class AttachmentsService {
     caption?: string,
   ): Promise<Attachment | null> {
     try {
-      const { url, mimeType, fileSize } = await this.metaService.getMediaUrl(mediaId, accessToken);
-      const { buffer, contentType } = await this.metaService.downloadMedia(url, accessToken);
+      const { url, mimeType, fileSize } = await this.metaService.getMediaUrl(
+        mediaId,
+        accessToken,
+      );
+      const { buffer, contentType } = await this.metaService.downloadMedia(
+        url,
+        accessToken,
+      );
 
       const storageKey = `${tenantId}/${messageId}/${mediaId}`;
-      await this.storageService.upload(storageKey, buffer, mimeType || contentType);
+      await this.storageService.upload(
+        storageKey,
+        buffer,
+        mimeType || contentType,
+      );
 
       return this.repo.save(
         this.repo.create({
@@ -48,7 +58,9 @@ export class AttachmentsService {
       );
     } catch (error) {
       if (error instanceof MetaApiError) {
-        this.logger.warn(`Media download failed for message ${messageId} (non-fatal): ${error.message}`);
+        this.logger.warn(
+          `Media download failed for message ${messageId} (non-fatal): ${error.message}`,
+        );
         return null;
       }
       throw error;
@@ -61,7 +73,7 @@ export class AttachmentsService {
 
   async getPresignedUrl(id: string): Promise<string> {
     const attachment = await this.repo.findOne({ where: { id } });
-    if (!attachment) throw new NotFoundException('Attachment not found');
+    if (!attachment) throw new NotFoundException("Attachment not found");
     return this.storageService.getPresignedUrl(attachment.storageKey);
   }
 }

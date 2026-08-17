@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
 
 /**
  * Worker entrypoint: same module graph as the API (`main.ts`), but no HTTP
@@ -10,14 +10,14 @@ import { AppModule } from './app.module';
  */
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
-  console.log('Worker running — consuming BullMQ queues, no HTTP listener');
+  console.log("Worker running — consuming BullMQ queues, no HTTP listener");
 
   const shutdown = async () => {
     await app.close();
     process.exit(0);
   };
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 bootstrap();

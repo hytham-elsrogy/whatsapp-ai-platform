@@ -1,8 +1,14 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Tenant } from '@/modules/tenants/entities/tenant.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
+import { Tenant } from "@/modules/tenants/entities/tenant.entity";
 
-export type IntegrationType = 'odoo' | 'oracle_apex' | 'his' | 'custom';
-export type IntegrationStatus = 'active' | 'inactive';
+export type IntegrationType = "odoo" | "oracle_apex" | "his" | "custom";
+export type IntegrationStatus = "active" | "inactive";
 
 export interface IntegrationConfig {
   baseUrl: string;
@@ -16,16 +22,16 @@ export interface IntegrationConfig {
   endpoints?: Record<string, string>; // actionName -> path, used by GenericHttpAdapter
 }
 
-@Entity('integrations')
+@Entity("integrations")
 export class Integration {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id" })
   tenant: Tenant;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: "tenant_id" })
   tenantId: string;
 
   @Column({ length: 30 })
@@ -34,9 +40,9 @@ export class Integration {
   @Column({ length: 150 })
   name: string;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   config: IntegrationConfig;
 
-  @Column({ length: 20, default: 'inactive' })
+  @Column({ length: 20, default: "inactive" })
   status: IntegrationStatus;
 }

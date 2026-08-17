@@ -1,6 +1,6 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
 
-const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
+const PRIORITIES = ["low", "normal", "high", "urgent"];
 
 export class CreateTicketDto {
   @IsString()
@@ -20,7 +20,7 @@ export class CreateTicketDto {
 
   @IsOptional()
   @IsIn(PRIORITIES)
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  priority?: "low" | "normal" | "high" | "urgent";
 
   @IsOptional()
   @IsString()

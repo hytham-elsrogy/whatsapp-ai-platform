@@ -1,14 +1,19 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
-@Entity('api_logs')
+@Entity("api_logs")
 export class ApiLog {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
+  @Column({ name: "tenant_id", type: "uuid", nullable: true })
   tenantId?: string | null;
 
-  @Column({ name: 'integration_id', type: 'uuid', nullable: true })
+  @Column({ name: "integration_id", type: "uuid", nullable: true })
   integrationId?: string | null;
 
   @Column({ length: 255 })
@@ -17,12 +22,12 @@ export class ApiLog {
   @Column({ length: 10 })
   method: string;
 
-  @Column({ name: 'status_code', type: 'int', nullable: true })
+  @Column({ name: "status_code", type: "int", nullable: true })
   statusCode?: number | null;
 
-  @Column({ name: 'duration_ms', type: 'int', nullable: true })
+  @Column({ name: "duration_ms", type: "int", nullable: true })
   durationMs?: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 }

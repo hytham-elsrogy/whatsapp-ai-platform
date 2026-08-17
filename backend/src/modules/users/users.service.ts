@@ -1,7 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "./entities/user.entity";
 
 export interface CreateUserInput {
   tenantId: string;
@@ -22,16 +26,16 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email: email.toLowerCase() },
-      relations: ['role', 'role.permissions', 'tenant'],
+      relations: ["role", "role.permissions", "tenant"],
     });
   }
 
   async findById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['role', 'role.permissions', 'tenant'],
+      relations: ["role", "role.permissions", "tenant"],
     });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
     return user;
   }
 
@@ -39,7 +43,8 @@ export class UsersService {
     const existing = await this.userRepository.findOne({
       where: { email: input.email.toLowerCase(), tenantId: input.tenantId },
     });
-    if (existing) throw new ConflictException('Email already in use for this tenant');
+    if (existing)
+      throw new ConflictException("Email already in use for this tenant");
 
     const user = this.userRepository.create({
       tenantId: input.tenantId,
@@ -47,7 +52,7 @@ export class UsersService {
       name: input.name,
       email: input.email.toLowerCase(),
       passwordHash: await User.hashPassword(input.password),
-      language: input.language ?? 'ar',
+      language: input.language ?? "ar",
     });
     return this.userRepository.save(user);
   }

@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { ConversationsService } from '@/modules/conversations/conversations.service';
-import { DepartmentsService } from '@/modules/departments/departments.service';
-import { RoutingService } from '@/modules/routing/routing.service';
-import { AuditLogsService } from '@/modules/audit-logs/audit-logs.service';
-import { NotificationsService } from '@/modules/notifications/notifications.service';
-import { EventsGateway } from '@/modules/realtime/events.gateway';
-import { Conversation } from '@/modules/conversations/entities/conversation.entity';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { ConversationsService } from "@/modules/conversations/conversations.service";
+import { DepartmentsService } from "@/modules/departments/departments.service";
+import { RoutingService } from "@/modules/routing/routing.service";
+import { AuditLogsService } from "@/modules/audit-logs/audit-logs.service";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
+import { EventsGateway } from "@/modules/realtime/events.gateway";
+import { Conversation } from "@/modules/conversations/entities/conversation.entity";
 
 @Injectable()
 export class AssignmentService {
@@ -27,8 +27,11 @@ export class AssignmentService {
    * "new", "bot" or "ai" status (all transition to "waiting" per the
    * conversation state machine).
    */
-  async routeToDepartment(conversation: Conversation, departmentId: string | null): Promise<void> {
-    if (!['new', 'bot', 'ai'].includes(conversation.status)) return;
+  async routeToDepartment(
+    conversation: Conversation,
+    departmentId: string | null,
+  ): Promise<void> {
+    if (!["new", "bot", "ai"].includes(conversation.status)) return;
 
     if (!departmentId) {
       // No department configured — stays as-is for a supervisor to triage
@@ -36,14 +39,26 @@ export class AssignmentService {
       return;
     }
 
-    await this.conversationsService.setDepartment(conversation.id, departmentId);
-    const waiting = await this.conversationsService.transition(conversation, 'waiting', {
-      type: 'system',
-    });
+    await this.conversationsService.setDepartment(
+      conversation.id,
+      departmentId,
+    );
+    const waiting = await this.conversationsService.transition(
+      conversation,
+      "waiting",
+      {
+        type: "system",
+      },
+    );
 
-    const agentId = await this.routingService.selectAgent(departmentId, conversation.id);
+    const agentId = await this.routingService.selectAgent(
+      departmentId,
+      conversation.id,
+    );
     if (agentId) {
-      await this.assign(waiting.tenantId, waiting.id, agentId, { type: 'system' });
+      await this.assign(waiting.tenantId, waiting.id, agentId, {
+        type: "system",
+      });
     }
   }
 
@@ -53,25 +68,36 @@ export class AssignmentService {
     agentId: string,
     actor: { type: string; id?: string },
   ): Promise<Conversation> {
-    const conversation = await this.conversationsService.findOne(tenantId, conversationId);
+    const conversation = await this.conversationsService.findOne(
+      tenantId,
+      conversationId,
+    );
 
     if (conversation.departmentId) {
-      const agents = await this.departmentsService.getDepartmentAgents(conversation.departmentId);
+      const agents = await this.departmentsService.getDepartmentAgents(
+        conversation.departmentId,
+      );
       if (!agents.some((a) => a.userId === agentId)) {
-        throw new BadRequestException('Agent is not a member of this conversation\'s department');
+        throw new BadRequestException(
+          "Agent is not a member of this conversation's department",
+        );
       }
     }
 
     await this.conversationsService.setAssignedAgent(conversationId, agentId);
-    if (['new', 'waiting', 'ai'].includes(conversation.status)) {
-      await this.conversationsService.transition({ ...conversation, assignedAgentId: agentId }, 'assigned', actor);
+    if (["new", "waiting", "ai"].includes(conversation.status)) {
+      await this.conversationsService.transition(
+        { ...conversation, assignedAgentId: agentId },
+        "assigned",
+        actor,
+      );
     }
 
     await this.auditLogsService.record({
       tenantId,
       userId: actor.id,
-      action: 'conversation.assigned',
-      entityType: 'conversation',
+      action: "conversation.assigned",
+      entityType: "conversation",
       entityId: conversationId,
       newValue: { assignedAgentId: agentId },
     });
@@ -82,10 +108,12 @@ export class AssignmentService {
     await this.notificationsService.create({
       tenantId,
       userId: agentId,
-      type: 'new_assignment',
+      type: "new_assignment",
       payload: { conversationId },
     });
-    this.eventsGateway.emitToTenant(tenantId, 'conversation:updated', { conversationId });
+    this.eventsGateway.emitToTenant(tenantId, "conversation:updated", {
+      conversationId,
+    });
 
     // Refetch rather than patching the pre-assignment `conversation` object
     // in place — it still carries the `assignedAgent` relation loaded
@@ -100,20 +128,29 @@ export class AssignmentService {
     toDepartmentId: string,
     actor: { type: string; id?: string },
   ): Promise<Conversation> {
-    const conversation = await this.conversationsService.findOne(tenantId, conversationId);
-    await this.conversationsService.setDepartment(conversationId, toDepartmentId);
+    const conversation = await this.conversationsService.findOne(
+      tenantId,
+      conversationId,
+    );
+    await this.conversationsService.setDepartment(
+      conversationId,
+      toDepartmentId,
+    );
 
     await this.auditLogsService.record({
       tenantId,
       userId: actor.id,
-      action: 'conversation.transferred',
-      entityType: 'conversation',
+      action: "conversation.transferred",
+      entityType: "conversation",
       entityId: conversationId,
       oldValue: { departmentId: conversation.departmentId },
       newValue: { departmentId: toDepartmentId },
     });
 
-    const agentId = await this.routingService.selectAgent(toDepartmentId, conversationId);
+    const agentId = await this.routingService.selectAgent(
+      toDepartmentId,
+      conversationId,
+    );
     if (agentId) {
       return this.assign(tenantId, conversationId, agentId, actor);
     }

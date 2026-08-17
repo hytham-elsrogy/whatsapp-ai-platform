@@ -1,8 +1,8 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { ChatbotService } from '../chatbot.service';
-import { CHATBOT_DELAY_QUEUE } from '../chatbot-delay.constants';
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Logger } from "@nestjs/common";
+import { Job } from "bullmq";
+import { ChatbotService } from "../chatbot.service";
+import { CHATBOT_DELAY_QUEUE } from "../chatbot-delay.constants";
 
 interface ChatbotDelayJobData {
   sessionId: string;
@@ -18,7 +18,12 @@ export class ChatbotDelayProcessor extends WorkerHost {
   }
 
   async process(job: Job<ChatbotDelayJobData>): Promise<void> {
-    await this.chatbotService.resumeAfterDelay(job.data.sessionId, job.data.nodeId);
-    this.logger.debug(`Resumed session ${job.data.sessionId} after delay node ${job.data.nodeId}`);
+    await this.chatbotService.resumeAfterDelay(
+      job.data.sessionId,
+      job.data.nodeId,
+    );
+    this.logger.debug(
+      `Resumed session ${job.data.sessionId} after delay node ${job.data.nodeId}`,
+    );
   }
 }

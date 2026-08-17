@@ -1,27 +1,34 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { KbDocument } from './kb-document.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
+import { KbDocument } from "./kb-document.entity";
 
-@Entity('document_chunks')
+@Entity("document_chunks")
 export class DocumentChunk {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => KbDocument, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'document_id' })
+  @ManyToOne(() => KbDocument, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "document_id" })
   document: KbDocument;
 
-  @Column({ name: 'document_id' })
+  @Column({ name: "document_id" })
   documentId: string;
 
-  @Column({ name: 'chunk_index' })
+  @Column({ name: "chunk_index" })
   chunkIndex: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   content: string;
 
-  @Column({ name: 'token_count', nullable: true })
+  @Column({ name: "token_count", nullable: true })
   tokenCount?: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 }

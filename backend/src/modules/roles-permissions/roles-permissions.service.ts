@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
-import { Role } from './entities/role.entity';
-import { Permission } from './entities/permission.entity';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { IsNull, Repository } from "typeorm";
+import { Role } from "./entities/role.entity";
+import { Permission } from "./entities/permission.entity";
 
 @Injectable()
 export class RolesPermissionsService {
@@ -16,7 +16,7 @@ export class RolesPermissionsService {
   async findSystemRoleByName(name: string): Promise<Role> {
     const role = await this.roleRepository.findOne({
       where: { name, tenant: IsNull() },
-      relations: ['permissions'],
+      relations: ["permissions"],
     });
     if (!role) throw new NotFoundException(`System role "${name}" not found`);
     return role;

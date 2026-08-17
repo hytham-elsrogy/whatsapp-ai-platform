@@ -1,4 +1,4 @@
-export const CHATBOT_DELAY_QUEUE = 'chatbot-delay';
+export const CHATBOT_DELAY_QUEUE = "chatbot-delay";
 
 // A misconfigured huge delay (e.g. a typo like 999999999 seconds) shouldn't
 // leave an effectively-permanent BullMQ delayed job sitting around.

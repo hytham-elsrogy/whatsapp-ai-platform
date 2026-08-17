@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { Injectable } from "@nestjs/common";
+import { InjectDataSource } from "@nestjs/typeorm";
+import { DataSource } from "typeorm";
 
 export interface RetrievedChunk {
   chunkId: string;
@@ -20,7 +20,11 @@ export interface RetrievedChunk {
 export class EmbeddingsRepository {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
-  async insert(chunkId: string, vector: number[], model: string): Promise<void> {
+  async insert(
+    chunkId: string,
+    vector: number[],
+    model: string,
+  ): Promise<void> {
     await this.dataSource.query(
       `INSERT INTO embeddings (chunk_id, vector, model) VALUES ($1, $2::vector, $3)
        ON CONFLICT (chunk_id) DO UPDATE SET vector = $2::vector, model = $3`,
@@ -55,6 +59,6 @@ export class EmbeddingsRepository {
   }
 
   private toVectorLiteral(vector: number[]): string {
-    return `[${vector.join(',')}]`;
+    return `[${vector.join(",")}]`;
   }
 }

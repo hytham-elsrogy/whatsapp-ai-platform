@@ -1,6 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { IntegrationConfig } from '../entities/integration.entity';
-import { AdapterCallResult, IntegrationAdapter, IntegrationCallError, resolveSecret } from './integration-adapter.interface';
+import { Injectable } from "@nestjs/common";
+import { IntegrationConfig } from "../entities/integration.entity";
+import {
+  AdapterCallResult,
+  IntegrationAdapter,
+  IntegrationCallError,
+  resolveSecret,
+} from "./integration-adapter.interface";
 
 /**
  * The `custom` integration type — a plain REST call. `config.endpoints`
@@ -12,17 +17,24 @@ import { AdapterCallResult, IntegrationAdapter, IntegrationCallError, resolveSec
  */
 @Injectable()
 export class GenericHttpAdapter implements IntegrationAdapter {
-  async execute(config: IntegrationConfig, action: string, params: Record<string, unknown>): Promise<AdapterCallResult> {
+  async execute(
+    config: IntegrationConfig,
+    action: string,
+    params: Record<string, unknown>,
+  ): Promise<AdapterCallResult> {
     const path = config.endpoints?.[action];
     if (!path) {
-      throw new IntegrationCallError(400, `No endpoint configured for action "${action}"`);
+      throw new IntegrationCallError(
+        400,
+        `No endpoint configured for action "${action}"`,
+      );
     }
 
     const token = resolveSecret(config.secretRef);
     const response = await fetch(`${config.baseUrl}${path}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(params),
@@ -30,7 +42,10 @@ export class GenericHttpAdapter implements IntegrationAdapter {
 
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new IntegrationCallError(response.status, `Generic HTTP integration call failed: ${response.statusText}`);
+      throw new IntegrationCallError(
+        response.status,
+        `Generic HTTP integration call failed: ${response.statusText}`,
+      );
     }
     return { statusCode: response.status, body };
   }

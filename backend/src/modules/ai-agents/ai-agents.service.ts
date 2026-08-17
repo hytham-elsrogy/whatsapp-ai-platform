@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AiAgent } from './entities/ai-agent.entity';
-import { CreateAiAgentDto } from './dto/create-ai-agent.dto';
-import { UpdateAiAgentDto } from './dto/update-ai-agent.dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { AiAgent } from "./entities/ai-agent.entity";
+import { CreateAiAgentDto } from "./dto/create-ai-agent.dto";
+import { UpdateAiAgentDto } from "./dto/update-ai-agent.dto";
 
 @Injectable()
 export class AiAgentsService {
@@ -13,12 +13,15 @@ export class AiAgentsService {
   ) {}
 
   findAll(tenantId: string): Promise<AiAgent[]> {
-    return this.repo.find({ where: { tenantId }, order: { createdAt: 'DESC' } });
+    return this.repo.find({
+      where: { tenantId },
+      order: { createdAt: "DESC" },
+    });
   }
 
   async findOne(tenantId: string, id: string): Promise<AiAgent> {
     const agent = await this.repo.findOne({ where: { id, tenantId } });
-    if (!agent) throw new NotFoundException('AI agent not found');
+    if (!agent) throw new NotFoundException("AI agent not found");
     return agent;
   }
 
@@ -32,7 +35,11 @@ export class AiAgentsService {
     return this.repo.save(agent);
   }
 
-  async update(tenantId: string, id: string, dto: UpdateAiAgentDto): Promise<AiAgent> {
+  async update(
+    tenantId: string,
+    id: string,
+    dto: UpdateAiAgentDto,
+  ): Promise<AiAgent> {
     await this.findOne(tenantId, id); // tenant-scope check
     await this.repo.update(id, dto);
     return this.findOne(tenantId, id);

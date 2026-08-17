@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { EventsGateway } from '@/modules/realtime/events.gateway';
-import { Notification, NotificationType } from './entities/notification.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { EventsGateway } from "@/modules/realtime/events.gateway";
+import { Notification, NotificationType } from "./entities/notification.entity";
 
 export interface CreateNotificationInput {
   tenantId: string;
@@ -26,15 +26,27 @@ export class NotificationsService {
   ) {}
 
   async create(input: CreateNotificationInput): Promise<Notification> {
-    const notification = await this.repo.save(this.repo.create({ ...input, payload: input.payload ?? {} }));
-    this.eventsGateway.emitToUser(input.userId, 'notification:new', notification);
+    const notification = await this.repo.save(
+      this.repo.create({ ...input, payload: input.payload ?? {} }),
+    );
+    this.eventsGateway.emitToUser(
+      input.userId,
+      "notification:new",
+      notification,
+    );
     return notification;
   }
 
-  findForUser(tenantId: string, userId: string, unreadOnly = false): Promise<Notification[]> {
+  findForUser(
+    tenantId: string,
+    userId: string,
+    unreadOnly = false,
+  ): Promise<Notification[]> {
     return this.repo.find({
-      where: unreadOnly ? { tenantId, userId, isRead: false } : { tenantId, userId },
-      order: { createdAt: 'DESC' },
+      where: unreadOnly
+        ? { tenantId, userId, isRead: false }
+        : { tenantId, userId },
+      order: { createdAt: "DESC" },
       take: 50,
     });
   }
@@ -44,6 +56,9 @@ export class NotificationsService {
   }
 
   async markAllRead(tenantId: string, userId: string): Promise<void> {
-    await this.repo.update({ tenantId, userId, isRead: false }, { isRead: true });
+    await this.repo.update(
+      { tenantId, userId, isRead: false },
+      { isRead: true },
+    );
   }
 }

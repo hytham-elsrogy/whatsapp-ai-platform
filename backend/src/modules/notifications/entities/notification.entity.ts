@@ -1,31 +1,33 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
 export type NotificationType =
-  | 'new_conversation'
-  | 'new_assignment'
-  | 'sla_breach'
-  | 'ai_escalation';
+  "new_conversation" | "new_assignment" | "sla_breach" | "ai_escalation";
 
-@Entity('notifications')
+@Entity("notifications")
 export class Notification {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: "tenant_id" })
   tenantId: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: "user_id" })
   userId: string;
 
   @Column({ length: 50 })
   type: NotificationType;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   payload: Record<string, unknown>;
 
-  @Column({ name: 'is_read', default: false })
+  @Column({ name: "is_read", default: false })
   isRead: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 }

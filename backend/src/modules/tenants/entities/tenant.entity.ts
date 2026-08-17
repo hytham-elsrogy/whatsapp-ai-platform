@@ -4,11 +4,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from "typeorm";
 
-@Entity('tenants')
+@Entity("tenants")
 export class Tenant {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ length: 150 })
@@ -17,15 +17,15 @@ export class Tenant {
   @Column({ length: 80, unique: true })
   slug: string;
 
-  @Column({ length: 20, default: 'active' })
-  status: 'active' | 'suspended';
+  @Column({ length: 20, default: "active" })
+  status: "active" | "suspended";
 
-  @Column({ length: 40, default: 'standard' })
+  @Column({ length: 40, default: "standard" })
   plan: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: "updated_at" })
   updatedAt: Date;
 }

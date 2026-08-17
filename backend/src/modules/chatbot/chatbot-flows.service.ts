@@ -1,12 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Repository } from 'typeorm';
-import { ChatbotFlow } from './entities/chatbot-flow.entity';
-import { ChatbotNode } from './entities/chatbot-node.entity';
-import { ChatbotEdge } from './entities/chatbot-edge.entity';
-import { ChatbotSession } from './entities/chatbot-session.entity';
-import { CreateFlowDto } from './dto/create-flow.dto';
-import { SaveGraphDto } from './dto/save-graph.dto';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { DataSource, IsNull, Repository } from "typeorm";
+import { ChatbotFlow } from "./entities/chatbot-flow.entity";
+import { ChatbotNode } from "./entities/chatbot-node.entity";
+import { ChatbotEdge } from "./entities/chatbot-edge.entity";
+import { ChatbotSession } from "./entities/chatbot-session.entity";
+import { CreateFlowDto } from "./dto/create-flow.dto";
+import { SaveGraphDto } from "./dto/save-graph.dto";
 
 export interface FlowWithGraph extends ChatbotFlow {
   nodes: ChatbotNode[];
@@ -27,12 +31,15 @@ export class ChatbotFlowsService {
   ) {}
 
   findAll(tenantId: string): Promise<ChatbotFlow[]> {
-    return this.flowRepo.find({ where: { tenantId }, order: { createdAt: 'DESC' } });
+    return this.flowRepo.find({
+      where: { tenantId },
+      order: { createdAt: "DESC" },
+    });
   }
 
   async findOne(tenantId: string, id: string): Promise<ChatbotFlow> {
     const flow = await this.flowRepo.findOne({ where: { id, tenantId } });
-    if (!flow) throw new NotFoundException('Chatbot flow not found');
+    if (!flow) throw new NotFoundException("Chatbot flow not found");
     return flow;
   }
 
@@ -45,25 +52,47 @@ export class ChatbotFlowsService {
     return { ...flow, nodes, edges };
   }
 
-  async findPublishedById(tenantId: string, id: string): Promise<ChatbotFlow | null> {
-    return this.flowRepo.findOne({ where: { id, tenantId, status: 'published' } });
+  async findPublishedById(
+    tenantId: string,
+    id: string,
+  ): Promise<ChatbotFlow | null> {
+    return this.flowRepo.findOne({
+      where: { id, tenantId, status: "published" },
+    });
   }
 
-  create(tenantId: string, userId: string, dto: CreateFlowDto): Promise<ChatbotFlow> {
-    const flow = this.flowRepo.create({ ...dto, tenantId, createdById: userId });
+  create(
+    tenantId: string,
+    userId: string,
+    dto: CreateFlowDto,
+  ): Promise<ChatbotFlow> {
+    const flow = this.flowRepo.create({
+      ...dto,
+      tenantId,
+      createdById: userId,
+    });
     return this.flowRepo.save(flow);
   }
 
-  async saveGraph(tenantId: string, flowId: string, dto: SaveGraphDto): Promise<FlowWithGraph> {
+  async saveGraph(
+    tenantId: string,
+    flowId: string,
+    dto: SaveGraphDto,
+  ): Promise<FlowWithGraph> {
     await this.findOne(tenantId, flowId); // tenant-scope check
 
-    if (!dto.nodes.some((n) => n.type === 'start')) {
+    if (!dto.nodes.some((n) => n.type === "start")) {
       throw new BadRequestException('Flow must contain a "start" node');
     }
     const clientIds = new Set(dto.nodes.map((n) => n.clientId));
     for (const edge of dto.edges) {
-      if (!clientIds.has(edge.sourceClientId) || !clientIds.has(edge.targetClientId)) {
-        throw new BadRequestException('Edge references a node not present in this graph');
+      if (
+        !clientIds.has(edge.sourceClientId) ||
+        !clientIds.has(edge.targetClientId)
+      ) {
+        throw new BadRequestException(
+          "Edge references a node not present in this graph",
+        );
       }
     }
 
@@ -88,7 +117,7 @@ export class ChatbotFlowsService {
           ChatbotNode,
           manager.create(ChatbotNode, {
             flowId,
-            type: nodeInput.type as ChatbotNode['type'],
+            type: nodeInput.type as ChatbotNode["type"],
             config: nodeInput.config ?? {},
             positionX: nodeInput.positionX,
             positionY: nodeInput.positionY,
@@ -112,7 +141,9 @@ export class ChatbotFlowsService {
         savedEdges.push(saved);
       }
 
-      const flow = await manager.findOneOrFail(ChatbotFlow, { where: { id: flowId } });
+      const flow = await manager.findOneOrFail(ChatbotFlow, {
+        where: { id: flowId },
+      });
       return { ...flow, nodes: savedNodes, edges: savedEdges };
     });
   }
@@ -121,9 +152,9 @@ export class ChatbotFlowsService {
     const flow = await this.findOne(tenantId, id);
     const nodeCount = await this.nodeRepo.count({ where: { flowId: id } });
     if (nodeCount === 0) {
-      throw new BadRequestException('Cannot publish an empty flow');
+      throw new BadRequestException("Cannot publish an empty flow");
     }
-    await this.flowRepo.update(id, { status: 'published' });
-    return { ...flow, status: 'published' };
+    await this.flowRepo.update(id, { status: "published" });
+    return { ...flow, status: "published" };
   }
 }

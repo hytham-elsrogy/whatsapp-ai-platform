@@ -1,25 +1,32 @@
-import { Injectable } from '@nestjs/common';
-import { TemplatesService } from '@/modules/templates/templates.service';
-import { ActionContext, ActionDefinition, ActionResult } from '../action.interface';
+import { Injectable } from "@nestjs/common";
+import { TemplatesService } from "@/modules/templates/templates.service";
+import {
+  ActionContext,
+  ActionDefinition,
+  ActionResult,
+} from "../action.interface";
 
 @Injectable()
 export class SendTemplateAction implements ActionDefinition {
-  name = 'sendTemplate';
+  name = "sendTemplate";
   description =
-    'Send a pre-approved WhatsApp message template. Required when the 24h customer service window is closed.';
+    "Send a pre-approved WhatsApp message template. Required when the 24h customer service window is closed.";
   inputSchema = {
-    type: 'object' as const,
+    type: "object" as const,
     properties: {
-      templateName: { type: 'string' },
-      language: { type: 'string' },
-      variables: { type: 'array', items: { type: 'string' } },
+      templateName: { type: "string" },
+      language: { type: "string" },
+      variables: { type: "array", items: { type: "string" } },
     },
-    required: ['templateName', 'language'],
+    required: ["templateName", "language"],
   };
 
   constructor(private readonly templatesService: TemplatesService) {}
 
-  async handler(input: Record<string, unknown>, ctx: ActionContext): Promise<ActionResult> {
+  async handler(
+    input: Record<string, unknown>,
+    ctx: ActionContext,
+  ): Promise<ActionResult> {
     const message = await this.templatesService.sendApprovedTemplate(
       ctx.tenantId,
       ctx.conversation.id,
@@ -28,7 +35,7 @@ export class SendTemplateAction implements ActionDefinition {
         language: String(input.language),
         variables: (input.variables as string[] | undefined) ?? [],
       },
-      { type: 'ai' },
+      { type: "ai" },
     );
     return { success: true, messageId: message.id };
   }

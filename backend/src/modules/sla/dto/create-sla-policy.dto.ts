@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Min, MaxLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, MaxLength } from "class-validator";
 
 export class CreateSlaPolicyDto {
   @IsString()

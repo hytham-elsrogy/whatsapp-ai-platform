@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 export class MetaApiError extends Error {
   constructor(
@@ -7,12 +7,12 @@ export class MetaApiError extends Error {
     public metaCode?: number,
     message?: string,
   ) {
-    super(message || 'Meta API request failed');
+    super(message || "Meta API request failed");
   }
 }
 
 interface MetaSendResponse {
-  messaging_product: 'whatsapp';
+  messaging_product: "whatsapp";
   messages: { id: string }[];
 }
 
@@ -27,7 +27,10 @@ export class MetaService {
   private readonly apiVersion: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiVersion = this.configService.get<string>('meta.apiVersion', 'v20.0');
+    this.apiVersion = this.configService.get<string>(
+      "meta.apiVersion",
+      "v20.0",
+    );
   }
 
   async sendTextMessage(
@@ -37,9 +40,9 @@ export class MetaService {
     body: string,
   ): Promise<MetaSendResponse> {
     return this.post(phoneNumberId, accessToken, {
-      messaging_product: 'whatsapp',
+      messaging_product: "whatsapp",
       to,
-      type: 'text',
+      type: "text",
       text: { body },
     });
   }
@@ -54,14 +57,21 @@ export class MetaService {
     variables: string[],
   ): Promise<MetaSendResponse> {
     return this.post(phoneNumberId, accessToken, {
-      messaging_product: 'whatsapp',
+      messaging_product: "whatsapp",
       to,
-      type: 'template',
+      type: "template",
       template: {
         name: templateName,
         language: { code: language },
         ...(variables.length
-          ? { components: [{ type: 'body', parameters: variables.map((text) => ({ type: 'text', text })) }] }
+          ? {
+              components: [
+                {
+                  type: "body",
+                  parameters: variables.map((text) => ({ type: "text", text })),
+                },
+              ],
+            }
           : {}),
       },
     });
@@ -75,21 +85,35 @@ export class MetaService {
   async submitTemplate(
     wabaId: string,
     accessToken: string,
-    params: { name: string; category: string; language: string; body: string; variableCount: number },
+    params: {
+      name: string;
+      category: string;
+      language: string;
+      body: string;
+      variableCount: number;
+    },
   ): Promise<{ id: string; status: string }> {
     const url = `https://graph.facebook.com/${this.apiVersion}/${wabaId}/message_templates`;
-    const bodyComponent: Record<string, unknown> = { type: 'BODY', text: params.body };
+    const bodyComponent: Record<string, unknown> = {
+      type: "BODY",
+      text: params.body,
+    };
     if (params.variableCount > 0) {
       bodyComponent.example = {
-        body_text: [Array.from({ length: params.variableCount }, (_, i) => `example_${i + 1}`)],
+        body_text: [
+          Array.from(
+            { length: params.variableCount },
+            (_, i) => `example_${i + 1}`,
+          ),
+        ],
       };
     }
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         name: params.name,
@@ -103,11 +127,17 @@ export class MetaService {
 
     if (!response.ok) {
       const errorMessage = payload?.error?.message || response.statusText;
-      this.logger.warn(`Meta template submission ${response.status}: ${errorMessage}`);
-      throw new MetaApiError(response.status, payload?.error?.code, errorMessage);
+      this.logger.warn(
+        `Meta template submission ${response.status}: ${errorMessage}`,
+      );
+      throw new MetaApiError(
+        response.status,
+        payload?.error?.code,
+        errorMessage,
+      );
     }
 
-    return { id: payload.id, status: payload.status ?? 'PENDING' };
+    return { id: payload.id, status: payload.status ?? "PENDING" };
   }
 
   /**
@@ -122,33 +152,46 @@ export class MetaService {
     accessToken: string,
     to: string,
     interactive:
-      | { type: 'button'; bodyText: string; buttons: { id: string; title: string }[] }
       | {
-          type: 'list';
+          type: "button";
+          bodyText: string;
+          buttons: { id: string; title: string }[];
+        }
+      | {
+          type: "list";
           bodyText: string;
           buttonText: string;
           rows: { id: string; title: string; description?: string }[];
         },
   ): Promise<MetaSendResponse> {
-    if (interactive.type === 'button' && interactive.buttons.length > 3) {
-      throw new Error(`WhatsApp button messages support at most 3 buttons, got ${interactive.buttons.length}`);
+    if (interactive.type === "button" && interactive.buttons.length > 3) {
+      throw new Error(
+        `WhatsApp button messages support at most 3 buttons, got ${interactive.buttons.length}`,
+      );
     }
-    if (interactive.type === 'list' && interactive.rows.length > 10) {
-      throw new Error(`WhatsApp list messages support at most 10 rows, got ${interactive.rows.length}`);
+    if (interactive.type === "list" && interactive.rows.length > 10) {
+      throw new Error(
+        `WhatsApp list messages support at most 10 rows, got ${interactive.rows.length}`,
+      );
     }
 
     const action =
-      interactive.type === 'button'
-        ? { buttons: interactive.buttons.map((b) => ({ type: 'reply', reply: { id: b.id, title: b.title } })) }
+      interactive.type === "button"
+        ? {
+            buttons: interactive.buttons.map((b) => ({
+              type: "reply",
+              reply: { id: b.id, title: b.title },
+            })),
+          }
         : {
             button: interactive.buttonText,
             sections: [{ rows: interactive.rows }],
           };
 
     return this.post(phoneNumberId, accessToken, {
-      messaging_product: 'whatsapp',
+      messaging_product: "whatsapp",
       to,
-      type: 'interactive',
+      type: "interactive",
       interactive: {
         type: interactive.type,
         body: { text: interactive.bodyText },
@@ -157,26 +200,44 @@ export class MetaService {
     });
   }
 
-  async markAsRead(phoneNumberId: string, accessToken: string, waMessageId: string): Promise<void> {
+  async markAsRead(
+    phoneNumberId: string,
+    accessToken: string,
+    waMessageId: string,
+  ): Promise<void> {
     await this.post(phoneNumberId, accessToken, {
-      messaging_product: 'whatsapp',
-      status: 'read',
+      messaging_product: "whatsapp",
+      status: "read",
       message_id: waMessageId,
     });
   }
 
   /** Resolves a media_id from an inbound webhook to a short-lived (~5min) download URL. */
-  async getMediaUrl(mediaId: string, accessToken: string): Promise<{ url: string; mimeType: string; fileSize: number }> {
-    const response = await fetch(`https://graph.facebook.com/${this.apiVersion}/${mediaId}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+  async getMediaUrl(
+    mediaId: string,
+    accessToken: string,
+  ): Promise<{ url: string; mimeType: string; fileSize: number }> {
+    const response = await fetch(
+      `https://graph.facebook.com/${this.apiVersion}/${mediaId}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const errorMessage = payload?.error?.message || response.statusText;
       this.logger.warn(`Meta media lookup ${response.status}: ${errorMessage}`);
-      throw new MetaApiError(response.status, payload?.error?.code, errorMessage);
+      throw new MetaApiError(
+        response.status,
+        payload?.error?.code,
+        errorMessage,
+      );
     }
-    return { url: payload.url, mimeType: payload.mime_type, fileSize: payload.file_size };
+    return {
+      url: payload.url,
+      mimeType: payload.mime_type,
+      fileSize: payload.file_size,
+    };
   }
 
   /**
@@ -185,14 +246,29 @@ export class MetaService {
    * public link, and expires quickly, so this must be called right after
    * getMediaUrl(), not cached for later.
    */
-  async downloadMedia(url: string, accessToken: string): Promise<{ buffer: Buffer; contentType: string }> {
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  async downloadMedia(
+    url: string,
+    accessToken: string,
+  ): Promise<{ buffer: Buffer; contentType: string }> {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     if (!response.ok) {
-      this.logger.warn(`Meta media download ${response.status}: ${response.statusText}`);
-      throw new MetaApiError(response.status, undefined, `Media download failed: ${response.statusText}`);
+      this.logger.warn(
+        `Meta media download ${response.status}: ${response.statusText}`,
+      );
+      throw new MetaApiError(
+        response.status,
+        undefined,
+        `Media download failed: ${response.statusText}`,
+      );
     }
     const buffer = Buffer.from(await response.arrayBuffer());
-    return { buffer, contentType: response.headers.get('content-type') || 'application/octet-stream' };
+    return {
+      buffer,
+      contentType:
+        response.headers.get("content-type") || "application/octet-stream",
+    };
   }
 
   private async post(
@@ -202,10 +278,10 @@ export class MetaService {
   ): Promise<MetaSendResponse> {
     const url = `https://graph.facebook.com/${this.apiVersion}/${phoneNumberId}/messages`;
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
@@ -215,7 +291,11 @@ export class MetaService {
     if (!response.ok) {
       const errorMessage = payload?.error?.message || response.statusText;
       this.logger.warn(`Meta API ${response.status}: ${errorMessage}`);
-      throw new MetaApiError(response.status, payload?.error?.code, errorMessage);
+      throw new MetaApiError(
+        response.status,
+        payload?.error?.code,
+        errorMessage,
+      );
     }
 
     return payload as MetaSendResponse;

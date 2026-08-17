@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 /**
  * Adds routing configuration to departments — needed by RoutingService
@@ -7,7 +7,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * routing engine that actually needs it.
  */
 export class AddDepartmentRouting1786896303533 implements MigrationInterface {
-  name = 'AddDepartmentRouting1786896303533';
+  name = "AddDepartmentRouting1786896303533";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

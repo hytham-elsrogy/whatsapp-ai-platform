@@ -1,7 +1,14 @@
-import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { Type } from "class-transformer";
+import {
+  IsArray,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from "class-validator";
 
-const CATEGORIES = ['utility', 'marketing', 'authentication'];
+const CATEGORIES = ["utility", "marketing", "authentication"];
 
 class TemplateVariableInput {
   @IsOptional()
@@ -21,7 +28,7 @@ export class CreateTemplateDto {
   name: string;
 
   @IsIn(CATEGORIES)
-  category: 'utility' | 'marketing' | 'authentication';
+  category: "utility" | "marketing" | "authentication";
 
   @IsString()
   @MaxLength(10)

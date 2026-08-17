@@ -1,7 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { EmbeddingProvider } from '@/modules/llm/interfaces/llm-provider.interface';
-import { EMBEDDING_PROVIDER } from '@/modules/llm/llm.tokens';
-import { EmbeddingsRepository } from '@/modules/knowledge-base/embeddings.repository';
+import { Inject, Injectable } from "@nestjs/common";
+import { EmbeddingProvider } from "@/modules/llm/interfaces/llm-provider.interface";
+import { EMBEDDING_PROVIDER } from "@/modules/llm/llm.tokens";
+import { EmbeddingsRepository } from "@/modules/knowledge-base/embeddings.repository";
 
 export interface RetrievedContext {
   content: string;

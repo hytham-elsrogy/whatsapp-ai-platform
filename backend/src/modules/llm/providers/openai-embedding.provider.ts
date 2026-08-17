@@ -1,6 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { EmbeddingProvider, LLMProviderError } from '../interfaces/llm-provider.interface';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import {
+  EmbeddingProvider,
+  LLMProviderError,
+} from "../interfaces/llm-provider.interface";
 
 /**
  * Anthropic has no public embeddings endpoint, so RAG embeddings go through
@@ -15,20 +18,23 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
   readonly dimensions = 1536;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('embedding.apiKey', '');
-    this.modelName = this.configService.get<string>('embedding.model', 'text-embedding-3-small');
+    this.apiKey = this.configService.get<string>("embedding.apiKey", "");
+    this.modelName = this.configService.get<string>(
+      "embedding.model",
+      "text-embedding-3-small",
+    );
   }
 
   async embed(texts: string[]): Promise<number[][]> {
     if (!this.apiKey) {
-      throw new LLMProviderError(401, 'EMBEDDING_API_KEY is not configured');
+      throw new LLMProviderError(401, "EMBEDDING_API_KEY is not configured");
     }
 
-    const response = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ model: this.modelName, input: texts }),
     });
@@ -37,10 +43,14 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
 
     if (!response.ok) {
       const errorMessage = payload?.error?.message || response.statusText;
-      this.logger.warn(`OpenAI embeddings API ${response.status}: ${errorMessage}`);
+      this.logger.warn(
+        `OpenAI embeddings API ${response.status}: ${errorMessage}`,
+      );
       throw new LLMProviderError(response.status, errorMessage);
     }
 
-    return (payload.data as Array<{ embedding: number[] }>).map((d) => d.embedding);
+    return (payload.data as Array<{ embedding: number[] }>).map(
+      (d) => d.embedding,
+    );
   }
 }

@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Client } from 'minio';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Client } from "minio";
 
 /**
  * Thin wrapper around the MinIO client — the only place in the codebase
@@ -15,13 +15,16 @@ export class StorageService implements OnModuleInit {
   private readonly bucket: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>('minio.bucket', 'whatsapp-media');
+    this.bucket = this.configService.get<string>(
+      "minio.bucket",
+      "whatsapp-media",
+    );
     this.client = new Client({
-      endPoint: this.configService.get<string>('minio.endpoint', 'localhost'),
-      port: this.configService.get<number>('minio.port', 9000),
-      useSSL: this.configService.get<boolean>('minio.useSSL', false),
-      accessKey: this.configService.get<string>('minio.accessKey', ''),
-      secretKey: this.configService.get<string>('minio.secretKey', ''),
+      endPoint: this.configService.get<string>("minio.endpoint", "localhost"),
+      port: this.configService.get<number>("minio.port", 9000),
+      useSSL: this.configService.get<boolean>("minio.useSSL", false),
+      accessKey: this.configService.get<string>("minio.accessKey", ""),
+      secretKey: this.configService.get<string>("minio.secretKey", ""),
     });
   }
 
@@ -36,12 +39,20 @@ export class StorageService implements OnModuleInit {
       // Non-fatal at boot — MinIO being briefly unavailable shouldn't crash
       // the whole API; individual upload/download calls will surface their
       // own errors when actually used.
-      this.logger.warn(`Could not verify/create MinIO bucket "${this.bucket}": ${(error as Error).message}`);
+      this.logger.warn(
+        `Could not verify/create MinIO bucket "${this.bucket}": ${(error as Error).message}`,
+      );
     }
   }
 
-  async upload(key: string, buffer: Buffer, contentType: string): Promise<void> {
-    await this.client.putObject(this.bucket, key, buffer, buffer.length, { 'Content-Type': contentType });
+  async upload(
+    key: string,
+    buffer: Buffer,
+    contentType: string,
+  ): Promise<void> {
+    await this.client.putObject(this.bucket, key, buffer, buffer.length, {
+      "Content-Type": contentType,
+    });
   }
 
   /** Short-lived signed URL — the bucket is private, so this is the only way to actually retrieve an object. */

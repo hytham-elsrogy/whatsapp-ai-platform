@@ -1,19 +1,26 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Tenant } from '@/modules/tenants/entities/tenant.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
+import { Tenant } from "@/modules/tenants/entities/tenant.entity";
 
-export type TemplateCategory = 'utility' | 'marketing' | 'authentication';
-export type TemplateStatus = 'pending' | 'approved' | 'rejected';
+export type TemplateCategory = "utility" | "marketing" | "authentication";
+export type TemplateStatus = "pending" | "approved" | "rejected";
 
-@Entity('templates')
+@Entity("templates")
 export class Template {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id" })
   tenant: Tenant;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: "tenant_id" })
   tenantId: string;
 
   @Column({ length: 150 })
@@ -25,18 +32,23 @@ export class Template {
   @Column({ length: 10 })
   language: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   body: string;
 
-  @Column({ name: 'meta_template_id', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: "meta_template_id",
+    type: "varchar",
+    length: 100,
+    nullable: true,
+  })
   metaTemplateId?: string | null;
 
-  @Column({ length: 20, default: 'pending' })
+  @Column({ length: 20, default: "pending" })
   status: TemplateStatus;
 
-  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  @Column({ name: "created_by", type: "uuid", nullable: true })
   createdBy?: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 }

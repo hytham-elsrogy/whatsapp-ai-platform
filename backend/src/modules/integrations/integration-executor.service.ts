@@ -1,13 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IntegrationsService } from './integrations.service';
-import { GenericHttpAdapter } from './adapters/generic-http.adapter';
-import { OdooAdapter } from './adapters/odoo.adapter';
-import { OracleApexAdapter } from './adapters/oracle-apex.adapter';
-import { IntegrationAdapter, IntegrationCallError } from './adapters/integration-adapter.interface';
-import { ApiLog } from './entities/api-log.entity';
-import { Integration, IntegrationType } from './entities/integration.entity';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { IntegrationsService } from "./integrations.service";
+import { GenericHttpAdapter } from "./adapters/generic-http.adapter";
+import { OdooAdapter } from "./adapters/odoo.adapter";
+import { OracleApexAdapter } from "./adapters/oracle-apex.adapter";
+import {
+  IntegrationAdapter,
+  IntegrationCallError,
+} from "./adapters/integration-adapter.interface";
+import { ApiLog } from "./entities/api-log.entity";
+import { Integration, IntegrationType } from "./entities/integration.entity";
 
 export interface IntegrationExecutionResult {
   ok: boolean;
@@ -49,9 +52,15 @@ export class IntegrationExecutorService {
     action: string,
     params: Record<string, unknown>,
   ): Promise<IntegrationExecutionResult> {
-    const integration = await this.integrationsService.findActiveByType(tenantId, integrationType);
+    const integration = await this.integrationsService.findActiveByType(
+      tenantId,
+      integrationType,
+    );
     if (!integration) {
-      return { ok: false, error: `No active "${integrationType}" integration configured for this tenant` };
+      return {
+        ok: false,
+        error: `No active "${integrationType}" integration configured for this tenant`,
+      };
     }
     return this.callAdapter(tenantId, integration, action, params);
   }
@@ -83,12 +92,20 @@ export class IntegrationExecutorService {
     } catch (error) {
       if (error instanceof IntegrationCallError) {
         statusCode = error.statusCode;
-        this.logger.warn(`Integration call failed [${integration.type}/${action}]: ${error.message}`);
+        this.logger.warn(
+          `Integration call failed [${integration.type}/${action}]: ${error.message}`,
+        );
         return { ok: false, error: error.message };
       }
       throw error;
     } finally {
-      await this.logCall(tenantId, integration, action, statusCode, Date.now() - startedAt);
+      await this.logCall(
+        tenantId,
+        integration,
+        action,
+        statusCode,
+        Date.now() - startedAt,
+      );
     }
   }
 
@@ -104,7 +121,7 @@ export class IntegrationExecutorService {
         tenantId,
         integrationId: integration.id,
         endpoint: action,
-        method: 'POST',
+        method: "POST",
         statusCode,
         durationMs,
       }),

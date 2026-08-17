@@ -9,8 +9,8 @@ import {
   Max,
   MaxLength,
   Min,
-} from 'class-validator';
-import { GuardrailRules } from '../entities/ai-agent.entity';
+} from "class-validator";
+import { GuardrailRules } from "../entities/ai-agent.entity";
 
 export class CreateAiAgentDto {
   @IsString()
@@ -58,11 +58,10 @@ export class CreateAiAgentDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['auto', 'ar', 'en'])
+  @IsIn(["auto", "ar", "en"])
   language?: string;
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
-

@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 import {
   IsArray,
   IsIn,
@@ -7,23 +7,23 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
 const NODE_TYPES = [
-  'start',
-  'message',
-  'question',
-  'button',
-  'list',
-  'condition',
-  'department',
-  'agent',
-  'ai',
-  'api_call',
-  'db_query',
-  'delay',
-  'tag',
-  'end',
+  "start",
+  "message",
+  "question",
+  "button",
+  "list",
+  "condition",
+  "department",
+  "agent",
+  "ai",
+  "api_call",
+  "db_query",
+  "delay",
+  "tag",
+  "end",
 ];
 
 export class NodeInputDto {

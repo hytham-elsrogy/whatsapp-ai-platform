@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 /**
  * Full platform schema in one migration, mirroring
@@ -8,7 +8,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * changes.
  */
 export class InitialSchema1786891900203 implements MigrationInterface {
-  name = 'InitialSchema1786891900203';
+  name = "InitialSchema1786891900203";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -525,6 +525,8 @@ export class InitialSchema1786891900203 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`);
+    await queryRunner.query(
+      `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`,
+    );
   }
 }

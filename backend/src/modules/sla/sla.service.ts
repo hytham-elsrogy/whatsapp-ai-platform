@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
-import { NotificationsService } from '@/modules/notifications/notifications.service';
-import { SlaPolicy } from './entities/sla-policy.entity';
-import { SlaBreach, SlaBreachType } from './entities/sla-breach.entity';
-import { CreateSlaPolicyDto } from './dto/create-sla-policy.dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { IsNull, Repository } from "typeorm";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
+import { SlaPolicy } from "./entities/sla-policy.entity";
+import { SlaBreach, SlaBreachType } from "./entities/sla-breach.entity";
+import { CreateSlaPolicyDto } from "./dto/create-sla-policy.dto";
 
 @Injectable()
 export class SlaService {
@@ -22,7 +22,7 @@ export class SlaService {
 
   async findOne(tenantId: string, id: string): Promise<SlaPolicy> {
     const policy = await this.policyRepo.findOne({ where: { id, tenantId } });
-    if (!policy) throw new NotFoundException('SLA policy not found');
+    if (!policy) throw new NotFoundException("SLA policy not found");
     return policy;
   }
 
@@ -94,7 +94,7 @@ export class SlaService {
       await this.notificationsService.create({
         tenantId,
         userId,
-        type: 'sla_breach',
+        type: "sla_breach",
         payload: { ...scope, breachType: type },
       });
     }

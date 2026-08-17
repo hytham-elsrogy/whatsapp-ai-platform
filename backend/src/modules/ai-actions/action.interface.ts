@@ -1,4 +1,4 @@
-import { Conversation } from '@/modules/conversations/entities/conversation.entity';
+import { Conversation } from "@/modules/conversations/entities/conversation.entity";
 
 export interface ActionContext {
   tenantId: string;
@@ -17,14 +17,17 @@ export interface ActionDefinition {
   name: string;
   description: string;
   inputSchema: {
-    type: 'object';
+    type: "object";
     properties: Record<string, unknown>;
     required?: string[];
   };
-  handler(input: Record<string, unknown>, ctx: ActionContext): Promise<ActionResult>;
+  handler(
+    input: Record<string, unknown>,
+    ctx: ActionContext,
+  ): Promise<ActionResult>;
 }
 
-export const ACTION_DEFINITIONS = Symbol('ACTION_DEFINITIONS');
+export const ACTION_DEFINITIONS = Symbol("ACTION_DEFINITIONS");
 
 /** Thrown by a handler for an action whose backing system isn't built yet — logged as ai_actions.status = 'rejected', not 'failed'. */
 export class ActionNotImplementedError extends Error {}

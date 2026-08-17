@@ -1,7 +1,16 @@
-import { IsIn, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
-import { IntegrationConfig, IntegrationType } from '../entities/integration.entity';
+import {
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from "class-validator";
+import {
+  IntegrationConfig,
+  IntegrationType,
+} from "../entities/integration.entity";
 
-const TYPES: IntegrationType[] = ['odoo', 'oracle_apex', 'his', 'custom'];
+const TYPES: IntegrationType[] = ["odoo", "oracle_apex", "his", "custom"];
 
 export class CreateIntegrationDto {
   @IsIn(TYPES)
@@ -15,6 +24,6 @@ export class CreateIntegrationDto {
   config: IntegrationConfig;
 
   @IsOptional()
-  @IsIn(['active', 'inactive'])
-  status?: 'active' | 'inactive';
+  @IsIn(["active", "inactive"])
+  status?: "active" | "inactive";
 }

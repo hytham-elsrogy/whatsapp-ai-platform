@@ -1,17 +1,25 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import {
   ConsentSource,
   ConsentStatus,
   ConsentType,
   CustomerConsent,
-} from './entities/customer-consent.entity';
+} from "./entities/customer-consent.entity";
 
 // Common WhatsApp opt-out keywords, Arabic + English — matched
 // case-insensitively against the *entire trimmed message*, not a substring,
 // so "stop by tomorrow" doesn't false-positive.
-const OPT_OUT_KEYWORDS = ['stop', 'unsubscribe', 'cancel', 'إلغاء', 'الغاء', 'توقف', 'إيقاف'];
+const OPT_OUT_KEYWORDS = [
+  "stop",
+  "unsubscribe",
+  "cancel",
+  "إلغاء",
+  "الغاء",
+  "توقف",
+  "إيقاف",
+];
 
 @Injectable()
 export class ConsentsService {
@@ -29,7 +37,7 @@ export class ConsentsService {
     customerId: string,
     status: ConsentStatus,
     type?: ConsentType,
-    source: ConsentSource = 'manual',
+    source: ConsentSource = "manual",
   ): Promise<CustomerConsent> {
     const now = new Date();
     return this.repo.save(
@@ -38,24 +46,30 @@ export class ConsentsService {
         consentStatus: status,
         consentType: type,
         consentSource: source,
-        consentDate: status === 'opted_in' ? now : null,
-        optOutDate: status === 'opted_out' ? now : null,
+        consentDate: status === "opted_in" ? now : null,
+        optOutDate: status === "opted_out" ? now : null,
         lastCommunicationAt: now,
       }),
     );
   }
 
   async getLatest(customerId: string): Promise<CustomerConsent | null> {
-    return this.repo.findOne({ where: { customerId }, order: { createdAt: 'DESC' } });
+    return this.repo.findOne({
+      where: { customerId },
+      order: { createdAt: "DESC" },
+    });
   }
 
   async isOptedOut(customerId: string): Promise<boolean> {
     const latest = await this.getLatest(customerId);
-    return latest?.consentStatus === 'opted_out';
+    return latest?.consentStatus === "opted_out";
   }
 
   history(customerId: string): Promise<CustomerConsent[]> {
-    return this.repo.find({ where: { customerId }, order: { createdAt: 'DESC' } });
+    return this.repo.find({
+      where: { customerId },
+      order: { createdAt: "DESC" },
+    });
   }
 
   matchesOptOutKeyword(text: string): boolean {

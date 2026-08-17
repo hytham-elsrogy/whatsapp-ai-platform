@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AuditLog } from './entities/audit-log.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { AuditLog } from "./entities/audit-log.entity";
 
 export interface RecordAuditLogInput {
   tenantId?: string;
@@ -28,7 +28,7 @@ export class AuditLogsService {
   findAll(tenantId: string): Promise<AuditLog[]> {
     return this.repo.find({
       where: { tenantId },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
       take: 200,
     });
   }

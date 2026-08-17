@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { Injectable } from "@nestjs/common";
+import { InjectDataSource } from "@nestjs/typeorm";
+import { DataSource } from "typeorm";
 
 export interface OverviewReport {
   openConversations: number;
@@ -63,7 +63,9 @@ export class ReportsService {
       todayConversations: Number(row.today_conversations),
       resolvedToday: Number(row.resolved_today),
       avgFirstResponseMinutesToday:
-        row.avg_first_response_minutes_today === null ? null : Number(row.avg_first_response_minutes_today),
+        row.avg_first_response_minutes_today === null
+          ? null
+          : Number(row.avg_first_response_minutes_today),
     };
   }
 
@@ -87,7 +89,10 @@ export class ReportsService {
       agentName: r.agent_name,
       openCount: Number(r.open_count),
       resolvedCount: Number(r.resolved_count),
-      avgFirstResponseMinutes: r.avg_first_response_minutes === null ? null : Number(r.avg_first_response_minutes),
+      avgFirstResponseMinutes:
+        r.avg_first_response_minutes === null
+          ? null
+          : Number(r.avg_first_response_minutes),
     }));
   }
 
@@ -134,9 +139,13 @@ export class ReportsService {
       escalated: Number(summary.escalated),
       active: Number(summary.active),
       resolutionRate: total > 0 ? resolved / total : null,
-      avgConfidence: summary.avg_confidence === null ? null : Number(summary.avg_confidence),
+      avgConfidence:
+        summary.avg_confidence === null ? null : Number(summary.avg_confidence),
       totalTokensUsed: Number(tokenRow.total_tokens),
-      topIntents: topIntents.map((r: Record<string, string>) => ({ intent: r.intent, count: Number(r.count) })),
+      topIntents: topIntents.map((r: Record<string, string>) => ({
+        intent: r.intent,
+        count: Number(r.count),
+      })),
     };
   }
 
@@ -149,6 +158,9 @@ export class ReportsService {
        GROUP BY b.type`,
       [tenantId],
     );
-    return rows.map((r: Record<string, string>) => ({ type: r.type, count: Number(r.count) }));
+    return rows.map((r: Record<string, string>) => ({
+      type: r.type,
+      count: Number(r.count),
+    }));
   }
 }

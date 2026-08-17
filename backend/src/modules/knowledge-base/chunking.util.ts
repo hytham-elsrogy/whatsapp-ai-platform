@@ -20,7 +20,7 @@ export function chunkText(text: string): string[] {
     const wordCount = paragraph.split(/\s+/).filter(Boolean).length;
 
     if (currentWords > 0 && currentWords + wordCount > WORDS_PER_CHUNK) {
-      chunks.push(current.join('\n\n'));
+      chunks.push(current.join("\n\n"));
       current = [];
       currentWords = 0;
     }
@@ -28,7 +28,7 @@ export function chunkText(text: string): string[] {
     current.push(paragraph);
     currentWords += wordCount;
   }
-  if (current.length) chunks.push(current.join('\n\n'));
+  if (current.length) chunks.push(current.join("\n\n"));
 
   return chunks;
 }

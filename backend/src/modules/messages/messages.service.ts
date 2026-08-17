@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Message } from './entities/message.entity';
-import { MessageStatusEntity } from './entities/message-status.entity';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Message } from "./entities/message.entity";
+import { MessageStatusEntity } from "./entities/message-status.entity";
 
 @Injectable()
 export class MessagesService {
@@ -16,13 +16,13 @@ export class MessagesService {
   findByConversation(conversationId: string): Promise<Message[]> {
     return this.messageRepo.find({
       where: { conversationId },
-      order: { sentAt: 'ASC' },
+      order: { sentAt: "ASC" },
     });
   }
 
   async findOne(tenantId: string, id: string): Promise<Message> {
     const message = await this.messageRepo.findOne({ where: { id, tenantId } });
-    if (!message) throw new NotFoundException('Message not found');
+    if (!message) throw new NotFoundException("Message not found");
     return message;
   }
 
@@ -44,12 +44,12 @@ export class MessagesService {
   }
 
   private isUniqueViolation(error: unknown): boolean {
-    return (error as { code?: string })?.code === '23505';
+    return (error as { code?: string })?.code === "23505";
   }
 
   async recordStatusUpdate(
     waMessageId: string,
-    status: Message['status'],
+    status: Message["status"],
     occurredAt: Date,
     rawPayload: Record<string, unknown>,
   ): Promise<void> {
@@ -57,7 +57,12 @@ export class MessagesService {
     if (!message) return;
 
     await this.statusRepo.save(
-      this.statusRepo.create({ messageId: message.id, status, occurredAt, rawPayload }),
+      this.statusRepo.create({
+        messageId: message.id,
+        status,
+        occurredAt,
+        rawPayload,
+      }),
     );
     await this.messageRepo.update(message.id, { status });
   }

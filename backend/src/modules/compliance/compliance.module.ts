@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { ConsentsModule } from '@/modules/consents/consents.module';
-import { ComplianceService } from './compliance.service';
+import { Module } from "@nestjs/common";
+import { ConsentsModule } from "@/modules/consents/consents.module";
+import { ComplianceService } from "./compliance.service";
 
 @Module({
   imports: [ConsentsModule],
