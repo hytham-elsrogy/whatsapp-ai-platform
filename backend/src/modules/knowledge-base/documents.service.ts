@@ -17,6 +17,7 @@ import { CreateDocumentDto } from "./dto/create-document.dto";
 import { chunkText, estimateTokenCount } from "./chunking.util";
 import { extractTextFromHtml } from "./html-extractor.util";
 import { extractTextFromPdf } from "./pdf-extractor.util";
+import { assertPublicUrl } from "./url-safety.util";
 
 export interface DocumentWithChunks extends KbDocument {
   chunks: DocumentChunk[];
@@ -181,14 +182,49 @@ export class DocumentsService {
   }
 
   private async fetchAndExtractUrl(url: string): Promise<string> {
-    let response: Response;
-    try {
-      response = await fetch(url, { redirect: "follow" });
-    } catch (error) {
-      throw new BadRequestException(
-        `Could not reach URL: ${(error as Error).message}`,
-      );
+    // SSRF guard: a URL that resolves to a public address on first check
+    // could still redirect to an internal one (169.254.169.254, an
+    // internal MinIO/Postgres port, another container on this network) —
+    // so redirects are followed manually, one hop at a time, re-validating
+    // every target before the server ever connects to it.
+    const MAX_REDIRECTS = 5;
+    let currentUrl = url;
+    let response: Response | undefined;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      if (hop === MAX_REDIRECTS) {
+        throw new BadRequestException("Too many redirects");
+      }
+
+      try {
+        await assertPublicUrl(currentUrl);
+      } catch (error) {
+        throw new BadRequestException(
+          `Refusing to fetch that URL: ${(error as Error).message}`,
+        );
+      }
+
+      try {
+        response = await fetch(currentUrl, { redirect: "manual" });
+      } catch (error) {
+        throw new BadRequestException(
+          `Could not reach URL: ${(error as Error).message}`,
+        );
+      }
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location) {
+          throw new BadRequestException("Redirect with no Location header");
+        }
+        currentUrl = new URL(location, currentUrl).toString();
+        continue;
+      }
+      break;
     }
+    if (!response) {
+      throw new BadRequestException("Too many redirects");
+    }
+
     if (!response.ok) {
       throw new BadRequestException(
         `URL returned ${response.status} ${response.statusText}`,

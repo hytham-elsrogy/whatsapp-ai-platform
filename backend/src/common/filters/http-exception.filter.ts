@@ -22,10 +22,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
     const body = isHttpException ? exception.getResponse() : null;
+    // Only an HttpException's own message is safe to forward — those are
+    // deliberately written by application code for a client to see.
+    // Anything else (a raw Postgres/TypeORM constraint error, a MinIO
+    // client error, any unhandled exception) previously had its native
+    // `.message` sent straight to the client, leaking internal table/
+    // column/constraint names and query structure. The real detail is
+    // still logged below either way.
     const message =
       body && typeof body === "object" && "message" in body
         ? (body as { message: string | string[] }).message
-        : (exception as Error)?.message || "Internal server error";
+        : "Internal server error";
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(

@@ -12,6 +12,7 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { UsersService } from "@/modules/users/users.service";
+import { ConversationsService } from "@/modules/conversations/conversations.service";
 
 interface JwtAccessPayload {
   sub: string;
@@ -44,6 +45,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
+    private readonly conversationsService: ConversationsService,
   ) {}
 
   async handleConnection(client: Socket): Promise<void> {
@@ -70,6 +72,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.tenantId = user.tenantId;
       await client.join(`user:${user.id}`);
       await client.join(`tenant:${user.tenantId}`);
+      this.logger.debug(
+        `Socket ${client.id} authenticated as user ${user.id} (tenant ${user.tenantId})`,
+      );
     } catch (error) {
       this.logger.warn(
         `Rejected socket connection: ${(error as Error).message}`,
@@ -83,12 +88,37 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage("conversation:join")
-  handleJoinConversation(
+  async handleJoinConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() conversationId: string,
-  ): void {
-    if (typeof conversationId === "string")
-      client.join(`conversation:${conversationId}`);
+  ): Promise<void> {
+    if (typeof conversationId !== "string") return;
+    // client.data.tenantId is only set once handleConnection's async auth
+    // work finishes — explicitly required here (not just relied upon)
+    // because TypeORM silently *ignores* an undefined property in a
+    // `where` clause rather than erroring, so passing an unset tenantId
+    // through to findOne() would have quietly matched by id alone.
+    const tenantId = client.data.tenantId as string | undefined;
+    if (!tenantId) {
+      this.logger.warn(
+        `Rejected conversation:join for ${conversationId} — socket has no authenticated tenantId yet`,
+      );
+      return;
+    }
+    // Handshake auth only proves who the socket is, not which
+    // conversations it may listen to — without this, any authenticated
+    // socket could join any conversation's room by guessing its id and
+    // receive that conversation's live message stream regardless of tenant.
+    try {
+      await this.conversationsService.findOne(tenantId, conversationId);
+    } catch {
+      this.logger.warn(
+        `Rejected conversation:join for ${conversationId} — not in caller's tenant`,
+      );
+      return;
+    }
+    this.logger.debug(`Socket joined conversation:${conversationId}`);
+    await client.join(`conversation:${conversationId}`);
   }
 
   @SubscribeMessage("conversation:leave")
