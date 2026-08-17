@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+*.tsbuildinfo
+
+# Env files — real secrets never committed, only the .example templates
+.env
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker build context noise (backup scripts intentionally kept — this is
+# the project's own backup/ directory, not local backup output)

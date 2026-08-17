@@ -1,0 +1,254 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: wa-platform-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: whatsapp_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wa-platform-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: wa-platform-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis123 --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wa-platform-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: wa-platform-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - wa-platform-net
+
+  # Scheduled pg_dump backups (09-deployment-architecture.md §5). Runs its
+  # own loop rather than a cron daemon — simpler to reason about and to
+  # verify, and matches this codebase's general "small script over extra
+  # dependency" preference (e.g. the regex HTML extractor in the knowledge
+  # base module). See backup/restore-postgres.sh for the restore path.
+  postgres-backup:
+    image: postgres:16-alpine
+    container_name: wa-platform-postgres-backup
+    restart: unless-stopped
+    entrypoint: ["sh", "/backup.sh"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres123
+      PGDATABASE: whatsapp_platform
+      BACKUP_RETENTION_DAYS: "7"
+      BACKUP_INTERVAL_SECONDS: "86400"
+    volumes:
+      - ./backup/postgres-backup.sh:/backup.sh:ro
+      - postgres_backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - wa-platform-net
+
+  # Scheduled MinIO bucket snapshots (attachments) — same rationale as
+  # postgres-backup above.
+  minio-backup:
+    image: minio/mc:latest
+    container_name: wa-platform-minio-backup
+    restart: unless-stopped
+    entrypoint: ["sh", "/backup.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET: whatsapp-media
+      BACKUP_RETENTION_COUNT: "7"
+      BACKUP_INTERVAL_SECONDS: "86400"
+    volumes:
+      - ./backup/minio-backup.sh:/backup.sh:ro
+      - minio_backups:/backups
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - wa-platform-net
+
+  # Runs TypeORM migrations once, then exits — backend/worker wait for this
+  # to succeed before starting (docker-compose's service_completed_successfully
+  # condition below), matching the pre-start migration step documented in
+  # 09-deployment-architecture.md §5.
+  migrate:
+    build:
+      context: ./backend
+    image: wa-platform-backend
+    container_name: wa-platform-migrate
+    command: ["npm", "run", "migration:run:prod"]
+    environment: &backend-env
+      NODE_ENV: production
+      PORT: "3000"
+      # Both point at nginx now (single public entry point), not the
+      # containers' own internal ports — see nginx/nginx.conf.
+      APP_URL: http://localhost
+      FRONTEND_URL: http://localhost
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: whatsapp_platform
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      DB_SYNC: "false"
+      DB_LOGGING: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: redis123
+      # Dev-only placeholder secrets, same ones already used in backend/.env
+      # for local development — production must inject real values via a
+      # secret manager, never bake them into this file (see the
+      # access_token_secret_ref TODO from Phase 3/11 for the same principle
+      # applied to per-number Meta tokens).
+      JWT_ACCESS_SECRET: change_this_access_secret_min_32_chars
+      JWT_REFRESH_SECRET: change_this_refresh_secret_min_32_chars
+      META_APP_ID: dev_app_id
+      META_APP_SECRET: dev_local_app_secret_for_hmac_testing
+      META_VERIFY_TOKEN: dev_local_verify_token
+      META_ACCESS_TOKEN: dev_fake_access_token
+      AI_PROVIDER: anthropic
+      EMBEDDING_PROVIDER: openai
+      EMBEDDING_MODEL: text-embedding-3-small
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET: whatsapp-media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - wa-platform-net
+
+  backend:
+    build:
+      context: ./backend
+    image: wa-platform-backend
+    container_name: wa-platform-backend
+    restart: unless-stopped
+    environment: *backend-env
+    # No published ports — only nginx is publicly reachable, matching
+    # 09-deployment-architecture.md §1's topology. Still reachable from
+    # other containers (e.g. nginx) via the service name on the internal
+    # network.
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - wa-platform-net
+
+  # Same image as `backend`, different command/env — only this role runs the
+  # BullMQ job processors (inbound webhook processing, SLA sweep, chatbot
+  # delay resume). See backend/src/main.worker.ts and the WORKER_MODE checks
+  # in whatsapp.module.ts/tickets.module.ts/chatbot.module.ts for what
+  # actually changes. No ports published — never receives external traffic.
+  worker:
+    build:
+      context: ./backend
+    image: wa-platform-backend
+    container_name: wa-platform-worker
+    restart: unless-stopped
+    command: ["node", "dist/main.worker"]
+    environment:
+      <<: *backend-env
+      WORKER_MODE: "true"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - wa-platform-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the client bundle at build time, not read at runtime —
+        # see the Dockerfile comment. Deliberately empty, not an absolute
+        # URL: nginx serves both frontend and /api on the same origin, so a
+        # relative URL lets one build work correctly under both http and
+        # https (an absolute http:// URL would break under https — the
+        # browser blocks it as cross-origin/mixed content). See
+        # lib/api.ts's `??` handling of this value.
+        NEXT_PUBLIC_API_URL: ""
+    image: wa-platform-frontend
+    container_name: wa-platform-frontend
+    restart: unless-stopped
+    # No published ports — same reasoning as backend, reached via nginx only.
+    depends_on:
+      - backend
+    networks:
+      - wa-platform-net
+
+  nginx:
+    build:
+      context: ./nginx
+    image: wa-platform-nginx
+    container_name: wa-platform-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - wa-platform-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  postgres_backups:
+  minio_backups:
+
+networks:
+  wa-platform-net:
+    driver: bridge
