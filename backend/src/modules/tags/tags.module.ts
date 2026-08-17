@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConversationsModule } from "@/modules/conversations/conversations.module";
+import { CustomersModule } from "@/modules/customers/customers.module";
 import { Tag } from "./entities/tag.entity";
 import { ConversationTag } from "./entities/conversation-tag.entity";
 import { CustomerTag } from "./entities/customer-tag.entity";
@@ -13,6 +14,7 @@ import { CustomerTagsController } from "./customer-tags.controller";
   imports: [
     TypeOrmModule.forFeature([Tag, ConversationTag, CustomerTag]),
     ConversationsModule,
+    CustomersModule,
   ],
   providers: [TagsService],
   controllers: [

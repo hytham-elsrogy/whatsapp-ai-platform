@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConversationsService } from "@/modules/conversations/conversations.service";
 import { Conversation } from "@/modules/conversations/entities/conversation.entity";
+import { CustomersService } from "@/modules/customers/customers.service";
 import { Tag, TagScope } from "./entities/tag.entity";
 import { ConversationTag } from "./entities/conversation-tag.entity";
 import { CustomerTag } from "./entities/customer-tag.entity";
@@ -29,6 +30,7 @@ export class TagsService {
     @InjectRepository(CustomerTag)
     private readonly customerTagRepo: Repository<CustomerTag>,
     private readonly conversationsService: ConversationsService,
+    private readonly customersService: CustomersService,
   ) {}
 
   findAll(tenantId: string, scope?: TagScope): Promise<Tag[]> {
@@ -59,7 +61,11 @@ export class TagsService {
     return this.tagRepo.save(this.tagRepo.create({ tenantId, name, scope }));
   }
 
-  listForConversation(conversationId: string): Promise<Tag[]> {
+  async listForConversation(
+    tenantId: string,
+    conversationId: string,
+  ): Promise<Tag[]> {
+    await this.conversationsService.findOne(tenantId, conversationId); // tenant-scope check
     return this.tagRepo
       .createQueryBuilder("tag")
       .innerJoin(ConversationTag, "ct", "ct.tag_id = tag.id")
@@ -72,25 +78,31 @@ export class TagsService {
     conversationId: string,
     tagId: string,
   ): Promise<void> {
+    await this.conversationsService.findOne(tenantId, conversationId); // tenant-scope check
+    const tag = await this.findOwnedTag(tenantId, tagId);
+
     await this.conversationTagRepo
       .createQueryBuilder()
       .insert()
       .into(ConversationTag)
-      .values({ conversationId, tagId })
+      .values({ conversationId, tagId: tag.id })
       .orIgnore()
       .execute();
 
-    await this.maybeBumpPriority(tenantId, conversationId, tagId);
+    await this.maybeBumpPriority(tenantId, conversationId, tag);
   }
 
   async detachFromConversation(
+    tenantId: string,
     conversationId: string,
     tagId: string,
   ): Promise<void> {
+    await this.conversationsService.findOne(tenantId, conversationId); // tenant-scope check
     await this.conversationTagRepo.delete({ conversationId, tagId });
   }
 
-  listForCustomer(customerId: string): Promise<Tag[]> {
+  async listForCustomer(tenantId: string, customerId: string): Promise<Tag[]> {
+    await this.customersService.findOne(tenantId, customerId); // tenant-scope check
     return this.tagRepo
       .createQueryBuilder("tag")
       .innerJoin(CustomerTag, "ct", "ct.tag_id = tag.id")
@@ -98,28 +110,46 @@ export class TagsService {
       .getMany();
   }
 
-  async attachToCustomer(customerId: string, tagId: string): Promise<void> {
+  async attachToCustomer(
+    tenantId: string,
+    customerId: string,
+    tagId: string,
+  ): Promise<void> {
+    await this.customersService.findOne(tenantId, customerId); // tenant-scope check
+    const tag = await this.findOwnedTag(tenantId, tagId);
+
     await this.customerTagRepo
       .createQueryBuilder()
       .insert()
       .into(CustomerTag)
-      .values({ customerId, tagId })
+      .values({ customerId, tagId: tag.id })
       .orIgnore()
       .execute();
   }
 
-  async detachFromCustomer(customerId: string, tagId: string): Promise<void> {
+  async detachFromCustomer(
+    tenantId: string,
+    customerId: string,
+    tagId: string,
+  ): Promise<void> {
+    await this.customersService.findOne(tenantId, customerId); // tenant-scope check
     await this.customerTagRepo.delete({ customerId, tagId });
+  }
+
+  private async findOwnedTag(tenantId: string, tagId: string): Promise<Tag> {
+    const tag = await this.tagRepo.findOne({
+      where: { id: tagId, tenantId },
+    });
+    if (!tag) throw new NotFoundException("Tag not found");
+    return tag;
   }
 
   private async maybeBumpPriority(
     tenantId: string,
     conversationId: string,
-    tagId: string,
+    tag: Tag,
   ): Promise<void> {
-    const tag = await this.tagRepo.findOne({ where: { id: tagId } });
-    if (!tag || !HIGH_PRIORITY_TAG_NAMES.includes(tag.name.toLowerCase()))
-      return;
+    if (!HIGH_PRIORITY_TAG_NAMES.includes(tag.name.toLowerCase())) return;
 
     const conversation = await this.conversationsService.findOne(
       tenantId,

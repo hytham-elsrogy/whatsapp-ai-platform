@@ -6,6 +6,7 @@ import { User } from "@/modules/users/entities/user.entity";
 import { IntegrationsService } from "./integrations.service";
 import { IntegrationExecutorService } from "./integration-executor.service";
 import { CreateIntegrationDto } from "./dto/create-integration.dto";
+import { UpdateIntegrationDto } from "./dto/update-integration.dto";
 
 @ApiTags("integrations")
 @ApiBearerAuth()
@@ -31,7 +32,7 @@ export class IntegrationsController {
   update(
     @CurrentUser() user: User,
     @Param("id") id: string,
-    @Body() dto: Partial<CreateIntegrationDto>,
+    @Body() dto: UpdateIntegrationDto,
   ) {
     return this.integrationsService.update(user.tenantId, id, dto);
   }

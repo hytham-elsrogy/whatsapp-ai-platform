@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Integration, IntegrationType } from "./entities/integration.entity";
 import { CreateIntegrationDto } from "./dto/create-integration.dto";
+import { UpdateIntegrationDto } from "./dto/update-integration.dto";
 
 @Injectable()
 export class IntegrationsService {
@@ -36,7 +37,7 @@ export class IntegrationsService {
   async update(
     tenantId: string,
     id: string,
-    dto: Partial<CreateIntegrationDto>,
+    dto: UpdateIntegrationDto,
   ): Promise<Integration> {
     await this.findOne(tenantId, id); // tenant-scope check
     await this.repo.update(id, dto);

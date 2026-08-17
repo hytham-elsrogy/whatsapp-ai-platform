@@ -18,9 +18,10 @@ export class RoutingService {
     private readonly tagsService: TagsService,
   ) {}
 
-  /** conversationId is only required for skill_based — other strategies ignore it. */
+  /** conversationId (and tenantId, which scopes it) are only required for skill_based — other strategies ignore them. */
   async selectAgent(
     departmentId: string,
+    tenantId?: string,
     conversationId?: string,
   ): Promise<string | null> {
     const department =
@@ -54,9 +55,9 @@ export class RoutingService {
         return counts[0].userId;
       }
       case "skill_based": {
-        if (!conversationId) return null;
+        if (!conversationId || !tenantId) return null;
         const tagNames = (
-          await this.tagsService.listForConversation(conversationId)
+          await this.tagsService.listForConversation(tenantId, conversationId)
         ).map((t) => t.name);
         if (tagNames.length === 0) return null; // nothing to match on — falls back to unassigned, same as department_based
 

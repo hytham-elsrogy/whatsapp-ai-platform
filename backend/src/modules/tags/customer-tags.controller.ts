@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { User } from "@/modules/users/entities/user.entity";
@@ -11,8 +19,8 @@ export class CustomerTagsController {
   constructor(private readonly tagsService: TagsService) {}
 
   @Get()
-  list(@Param("customerId") customerId: string) {
-    return this.tagsService.listForCustomer(customerId);
+  list(@CurrentUser() user: User, @Param("customerId") customerId: string) {
+    return this.tagsService.listForCustomer(user.tenantId, customerId);
   }
 
   @Post()
@@ -22,6 +30,9 @@ export class CustomerTagsController {
     @Body("tagId") tagId?: string,
     @Body("name") name?: string,
   ) {
+    if (!tagId && !name) {
+      throw new BadRequestException("Either tagId or name is required");
+    }
     const resolvedTagId =
       tagId ??
       (
@@ -31,16 +42,21 @@ export class CustomerTagsController {
           "customer",
         )
       ).id;
-    await this.tagsService.attachToCustomer(customerId, resolvedTagId);
-    return this.tagsService.listForCustomer(customerId);
+    await this.tagsService.attachToCustomer(
+      user.tenantId,
+      customerId,
+      resolvedTagId,
+    );
+    return this.tagsService.listForCustomer(user.tenantId, customerId);
   }
 
   @Delete(":tagId")
   async detach(
+    @CurrentUser() user: User,
     @Param("customerId") customerId: string,
     @Param("tagId") tagId: string,
   ) {
-    await this.tagsService.detachFromCustomer(customerId, tagId);
-    return this.tagsService.listForCustomer(customerId);
+    await this.tagsService.detachFromCustomer(user.tenantId, customerId, tagId);
+    return this.tagsService.listForCustomer(user.tenantId, customerId);
   }
 }

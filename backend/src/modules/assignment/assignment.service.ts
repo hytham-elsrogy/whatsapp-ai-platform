@@ -53,6 +53,7 @@ export class AssignmentService {
 
     const agentId = await this.routingService.selectAgent(
       departmentId,
+      waiting.tenantId,
       conversation.id,
     );
     if (agentId) {
@@ -149,6 +150,7 @@ export class AssignmentService {
 
     const agentId = await this.routingService.selectAgent(
       toDepartmentId,
+      tenantId,
       conversationId,
     );
     if (agentId) {
