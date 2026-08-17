@@ -21,7 +21,7 @@ import { ConfigService } from "@nestjs/config";
 import { ApiExcludeController } from "@nestjs/swagger";
 import { Public } from "@/common/decorators/public.decorator";
 import { WebhookEvent } from "./entities/webhook-event.entity";
-import { WHATSAPP_INBOUND_QUEUE } from "@/queue/queue.module";
+import { WHATSAPP_INBOUND_QUEUE } from "@/queue/queue.constants";
 
 @ApiExcludeController()
 @Controller("webhooks/whatsapp")

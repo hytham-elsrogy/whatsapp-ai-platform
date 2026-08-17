@@ -5,7 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { WhatsAppService } from "@/modules/whatsapp/whatsapp.service";
 import { WebhookEvent } from "@/modules/whatsapp/entities/webhook-event.entity";
-import { WHATSAPP_INBOUND_QUEUE } from "../queue.module";
+import { WHATSAPP_INBOUND_QUEUE } from "../queue.constants";
 
 @Processor(WHATSAPP_INBOUND_QUEUE)
 export class WhatsappInboundProcessor extends WorkerHost {

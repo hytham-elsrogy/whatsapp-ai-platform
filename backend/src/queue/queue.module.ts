@@ -1,8 +1,7 @@
 import { Global, Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { ConfigService } from "@nestjs/config";
-
-export const WHATSAPP_INBOUND_QUEUE = "whatsapp-inbound";
+import { WHATSAPP_INBOUND_QUEUE } from "./queue.constants";
 
 @Global()
 @Module({
