@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
+import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { Public } from "@/common/decorators/public.decorator";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
@@ -26,7 +27,12 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
+  // Tighter than the app-wide default (200/min, app.module.ts) — login is
+  // the one endpoint a credential-stuffing/brute-force attempt would target
+  // directly, so it needs its own limit rather than inheriting the generous
+  // general-purpose one.
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post("login")
   async login(
     @Body() dto: LoginDto,
@@ -41,7 +47,10 @@ export class AuthController {
     return { accessToken: tokens.accessToken, user };
   }
 
+  // Looser than login since legitimate multi-tab usage can trigger several
+  // refreshes per minute, but still well under the app-wide default.
   @Public()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post("refresh")
   async refresh(
     @Req() req: Request,
