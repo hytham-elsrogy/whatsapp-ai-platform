@@ -106,7 +106,7 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="-m-6 flex h-screen overflow-hidden border border-gray-200 dark:border-gray-800">
+    <div className="-m-6 flex h-[calc(100vh-3.5rem)] overflow-hidden border border-gray-200 dark:border-gray-800">
       <ConversationList
         conversations={conversations}
         filter={filter}

@@ -23,7 +23,11 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-cairo)', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
+        soft: '0 4px 16px -4px rgb(0 0 0 / 0.08)',
       },
     },
   },

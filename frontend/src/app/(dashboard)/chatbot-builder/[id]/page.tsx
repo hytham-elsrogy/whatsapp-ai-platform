@@ -196,7 +196,7 @@ function BuilderCanvas() {
   const selectedEdge = edges.find((e) => e.id === selectedEdgeId);
 
   return (
-    <div className="-m-6 flex h-screen flex-col overflow-hidden">
+    <div className="-m-6 flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push('/chatbot-builder')} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">

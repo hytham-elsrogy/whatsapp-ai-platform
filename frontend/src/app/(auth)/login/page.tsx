@@ -2,8 +2,10 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { MessageCircle } from 'lucide-react';
 import { ApiError, api } from '@/lib/api';
 import { AuthUser, useAuthStore } from '@/store/auth-store';
+import { Button } from '@/components/ui/button';
 
 interface LoginResponse {
   accessToken: string;
@@ -34,12 +36,15 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h1 className="mb-1 text-xl font-semibold">تسجيل الدخول</h1>
-        <p className="mb-6 text-sm text-gray-500">
-          منصة خدمة العملاء عبر واتساب
-        </p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/5 via-transparent to-transparent px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-soft dark:border-gray-800 dark:bg-gray-900">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white">
+            <MessageCircle size={24} />
+          </div>
+          <h1 className="text-xl font-bold">تسجيل الدخول</h1>
+          <p className="mt-1 text-sm text-gray-500">منصة خدمة العملاء عبر واتساب</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -52,7 +57,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800"
               placeholder="admin@example.com"
             />
           </div>
@@ -67,7 +72,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800"
               placeholder="••••••••"
             />
           </div>
@@ -78,13 +83,9 @@ export default function LoginPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'جارٍ الدخول...' : 'دخول'}
-          </button>
+          </Button>
         </form>
       </div>
     </main>
