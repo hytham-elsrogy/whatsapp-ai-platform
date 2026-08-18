@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard, Inbox, Building2, Bot, Sparkles, BookOpen, Ticket,
-  FileText, BarChart3, Plug, LogOut, MessageCircle,
+  FileText, BarChart3, Plug, LogOut, MessageCircle, Settings,
 } from 'lucide-react';
 import { bootstrapSession } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -44,6 +44,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: '/departments', label: 'الأقسام', icon: Building2 },
       { href: '/integrations', label: 'التكاملات', icon: Plug },
+      { href: '/settings', label: 'إعدادات واتساب', icon: Settings },
     ],
   },
 ];
