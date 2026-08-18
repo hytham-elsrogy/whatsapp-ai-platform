@@ -81,6 +81,12 @@ export default function InboxPage() {
     await refreshSelected();
   }
 
+  async function handleSendMedia(type: 'image' | 'audio' | 'document', file: File | Blob, filename: string, caption?: string) {
+    if (!selectedId) return;
+    await conversationsService.sendMedia(selectedId, type, file, filename, caption);
+    await refreshSelected();
+  }
+
   async function handleSendTemplate(templateName: string, language: string, variables: string[]) {
     if (!selectedId) return;
     await templatesService.sendToConversation(selectedId, templateName, language, variables);
@@ -114,6 +120,7 @@ export default function InboxPage() {
           messages={messages}
           currentUserId={user.id}
           onSend={handleSend}
+          onSendMedia={handleSendMedia}
           onSendTemplate={handleSendTemplate}
           onStatusChange={handleStatusChange}
           onAssignToMe={handleAssignToMe}

@@ -200,6 +200,70 @@ export class MetaService {
     });
   }
 
+  /**
+   * Uploads media bytes to this WhatsApp number's media library, returning a
+   * media_id — the Cloud API never accepts raw bytes inline in a send call,
+   * every outbound image/audio/document goes through this two-step dance
+   * (upload, then reference the id in the actual /messages send).
+   */
+  async uploadMedia(
+    phoneNumberId: string,
+    accessToken: string,
+    buffer: Buffer,
+    mimeType: string,
+    filename: string,
+  ): Promise<string> {
+    const url = `https://graph.facebook.com/${this.apiVersion}/${phoneNumberId}/media`;
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    form.append(
+      "file",
+      new Blob([new Uint8Array(buffer)], { type: mimeType }),
+      filename,
+    );
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorMessage = payload?.error?.message || response.statusText;
+      this.logger.warn(`Meta media upload ${response.status}: ${errorMessage}`);
+      throw new MetaApiError(
+        response.status,
+        payload?.error?.code,
+        errorMessage,
+      );
+    }
+    return payload.id as string;
+  }
+
+  /** Sends a previously-uploaded media_id (see uploadMedia) as an image/audio/document message. Audio deliberately ignores caption — the Cloud API rejects captions on audio messages. */
+  async sendMediaMessage(
+    phoneNumberId: string,
+    accessToken: string,
+    to: string,
+    type: "image" | "audio" | "document",
+    mediaId: string,
+    options?: { caption?: string; filename?: string },
+  ): Promise<MetaSendResponse> {
+    const mediaObject: Record<string, unknown> = { id: mediaId };
+    if (options?.caption && type !== "audio")
+      mediaObject.caption = options.caption;
+    if (options?.filename && type === "document")
+      mediaObject.filename = options.filename;
+
+    return this.post(phoneNumberId, accessToken, {
+      messaging_product: "whatsapp",
+      to,
+      type,
+      [type]: mediaObject,
+    });
+  }
+
   async markAsRead(
     phoneNumberId: string,
     accessToken: string,

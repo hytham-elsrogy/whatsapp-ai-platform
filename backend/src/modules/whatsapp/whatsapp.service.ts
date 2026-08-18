@@ -26,10 +26,44 @@ import {
 } from "@/modules/compliance/compliance.service";
 import { ConsentsService } from "@/modules/consents/consents.service";
 import { AttachmentsService } from "@/modules/uploads/attachments.service";
+import { AudioTranscodeService } from "@/modules/uploads/audio-transcode.service";
 import { Conversation } from "@/modules/conversations/entities/conversation.entity";
+import { SendableMediaType } from "./dto/send-media.dto";
 
 const MEDIA_MESSAGE_TYPES = ["image", "document", "audio", "video"] as const;
 type MediaMessageType = (typeof MEDIA_MESSAGE_TYPES)[number];
+
+// WhatsApp Cloud API's documented per-type limits and accepted mime types
+// for outbound media messages (docs/architecture/05-meta-integration-architecture.md).
+const MAX_MEDIA_BYTES: Record<SendableMediaType, number> = {
+  image: 5 * 1024 * 1024,
+  audio: 16 * 1024 * 1024,
+  document: 100 * 1024 * 1024,
+};
+
+const ALLOWED_MEDIA_MIMES: Record<SendableMediaType, Set<string>> = {
+  image: new Set(["image/jpeg", "image/png"]),
+  // audio/webm isn't Meta-accepted directly — sendMedia transcodes it to
+  // audio/ogg (Opus) first, see AudioTranscodeService.
+  audio: new Set([
+    "audio/aac",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/amr",
+    "audio/ogg",
+    "audio/webm",
+  ]),
+  document: new Set([
+    "text/plain",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ]),
+};
 
 interface MetaWebhookBody {
   object?: string;
@@ -104,6 +138,7 @@ export class WhatsAppService {
     private readonly complianceService: ComplianceService,
     private readonly consentsService: ConsentsService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly audioTranscodeService: AudioTranscodeService,
   ) {}
 
   async sendText(
@@ -177,6 +212,133 @@ export class WhatsAppService {
       message,
     );
     return message;
+  }
+
+  /**
+   * Sends an agent-uploaded image/audio/document. Same service-window and
+   * compliance gating as sendText, plus type/size validation and (for
+   * webm voice notes, the only format browsers can record) a transcode to
+   * OGG/Opus before Meta will accept it.
+   */
+  async sendMedia(
+    tenantId: string,
+    conversationId: string,
+    file: {
+      buffer: Buffer;
+      mimetype: string;
+      originalname: string;
+      size: number;
+    },
+    dto: { type: SendableMediaType; caption?: string },
+    actor: { type: Message["senderType"]; id?: string },
+  ): Promise<Message> {
+    const conversation = await this.conversationsService.findOne(
+      tenantId,
+      conversationId,
+    );
+
+    if (!this.conversationsService.isWithinServiceWindow(conversation)) {
+      throw new BadRequestException(
+        "Customer Service Window Expired — a freeform message cannot be sent; use an approved template instead.",
+      );
+    }
+
+    this.validateMediaFile(dto.type, file.mimetype, file.size);
+
+    const whatsappNumber = await this.whatsappNumbersService.findById(
+      conversation.whatsappNumberId,
+    );
+
+    try {
+      await this.complianceService.checkOptIn(conversation.customerId);
+      await this.complianceService.checkRateLimit(whatsappNumber.phoneNumberId);
+    } catch (error) {
+      if (error instanceof ComplianceCheckError)
+        throw new BadRequestException(error.message);
+      throw error;
+    }
+
+    let uploadBuffer = file.buffer;
+    let uploadMimeType = file.mimetype;
+    if (dto.type === "audio" && file.mimetype !== "audio/ogg") {
+      uploadBuffer = await this.audioTranscodeService.webmToOggOpus(
+        file.buffer,
+      );
+      uploadMimeType = "audio/ogg";
+    }
+
+    const accessToken =
+      await this.whatsappNumbersService.resolveAccessToken(whatsappNumber);
+
+    let waMessageId: string | undefined;
+    try {
+      const mediaId = await this.metaService.uploadMedia(
+        whatsappNumber.phoneNumberId,
+        accessToken,
+        uploadBuffer,
+        uploadMimeType,
+        file.originalname,
+      );
+      const result = await this.metaService.sendMediaMessage(
+        whatsappNumber.phoneNumberId,
+        accessToken,
+        conversation.customer.whatsappNumber,
+        dto.type,
+        mediaId,
+        { caption: dto.caption, filename: file.originalname },
+      );
+      waMessageId = result.messages[0]?.id;
+    } catch (error) {
+      if (error instanceof MetaApiError) {
+        throw new BadGatewayException(
+          `WhatsApp media send failed: ${error.message}`,
+        );
+      }
+      throw error;
+    }
+
+    const message = await this.messagesService.create({
+      tenantId,
+      conversationId,
+      direction: "outbound",
+      senderType: actor.type,
+      senderId: actor.id,
+      waMessageId,
+      type: dto.type,
+      content: { [dto.type]: { caption: dto.caption ?? null } },
+      status: "sent",
+    });
+
+    await this.attachmentsService.storeOutbound(
+      tenantId,
+      message.id,
+      uploadBuffer,
+      uploadMimeType,
+      dto.caption,
+    );
+
+    await this.conversationsService.markFirstResponseIfUnset(conversation);
+    this.eventsGateway.emitToConversation(
+      conversationId,
+      "message:new",
+      message,
+    );
+    return message;
+  }
+
+  private validateMediaFile(
+    type: SendableMediaType,
+    mimetype: string,
+    size: number,
+  ): void {
+    if (!ALLOWED_MEDIA_MIMES[type].has(mimetype)) {
+      throw new BadRequestException(`Unsupported ${type} type: ${mimetype}`);
+    }
+    if (size > MAX_MEDIA_BYTES[type]) {
+      throw new BadRequestException(
+        `${type} exceeds WhatsApp's ${MAX_MEDIA_BYTES[type] / (1024 * 1024)}MB limit`,
+      );
+    }
   }
 
   /** Processed by the whatsapp-inbound queue worker — see src/queue. */

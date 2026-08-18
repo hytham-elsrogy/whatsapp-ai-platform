@@ -15,6 +15,9 @@ RUN npm run build
 FROM node:20-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
+# Needed to transcode browser-recorded voice notes (WebM/Opus) to the
+# OGG/Opus WhatsApp Cloud API requires — see AudioTranscodeService.
+RUN apk add --no-cache ffmpeg
 RUN addgroup -S app && adduser -S app -G app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev

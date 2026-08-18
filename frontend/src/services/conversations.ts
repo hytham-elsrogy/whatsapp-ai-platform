@@ -14,6 +14,14 @@ export const conversationsService = {
   send: (id: string, text: string) =>
     api.post<Message>(`/conversations/${id}/messages`, { text }),
 
+  sendMedia: (id: string, type: 'image' | 'audio' | 'document', file: File | Blob, filename: string, caption?: string) => {
+    const formData = new FormData();
+    formData.append('type', type);
+    if (caption) formData.append('caption', caption);
+    formData.append('file', file, filename);
+    return api.postForm<Message>(`/conversations/${id}/messages/media`, formData);
+  },
+
   setStatus: (id: string, status: Conversation['status']) =>
     api.patch<Conversation>(`/conversations/${id}/status`, { status }),
 

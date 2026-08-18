@@ -67,6 +67,28 @@ export class AttachmentsService {
     }
   }
 
+  /** Stores an agent-sent (outbound) attachment already uploaded to Meta — mirrors downloadAndStore's storage step, but there's no Meta media_id to look up since we already hold the bytes that were just sent. */
+  async storeOutbound(
+    tenantId: string,
+    messageId: string,
+    buffer: Buffer,
+    mimeType: string,
+    caption?: string,
+  ): Promise<Attachment> {
+    const storageKey = `${tenantId}/${messageId}/${Date.now()}`;
+    await this.storageService.upload(storageKey, buffer, mimeType);
+
+    return this.repo.save(
+      this.repo.create({
+        messageId,
+        storageKey,
+        mimeType,
+        size: buffer.length,
+        caption,
+      }),
+    );
+  }
+
   findByMessage(messageId: string): Promise<Attachment[]> {
     return this.repo.find({ where: { messageId } });
   }

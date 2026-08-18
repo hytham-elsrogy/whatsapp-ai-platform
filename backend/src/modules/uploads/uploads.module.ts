@@ -6,11 +6,12 @@ import { Attachment } from "./entities/attachment.entity";
 import { StorageService } from "./storage.service";
 import { AttachmentsService } from "./attachments.service";
 import { AttachmentsController } from "./attachments.controller";
+import { AudioTranscodeService } from "./audio-transcode.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([Attachment]), MetaModule, MessagesModule],
-  providers: [StorageService, AttachmentsService],
+  providers: [StorageService, AttachmentsService, AudioTranscodeService],
   controllers: [AttachmentsController],
-  exports: [AttachmentsService],
+  exports: [AttachmentsService, AudioTranscodeService],
 })
 export class UploadsModule {}
